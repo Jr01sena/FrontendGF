@@ -22,7 +22,7 @@ export function init() {
         <div class="card-body">
           <div class="row">
             <div class="col-md-4 text-center border-end d-flex flex-column align-items-center justify-content-center">
-              <i class="material-symbols-rounded mb-3" style="font-size: 5rem; color: #4caf50;">account_circle</i>
+              <i class="material-symbols-rounded mb-3" style="font-size: 4rem; color: #4caf50;">account_circle</i>
               <h5 class="text-success">${user.nombre_completo}</h5>
               <span class="text-muted small">${user.rol}</span>
             </div>

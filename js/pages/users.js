@@ -2,6 +2,10 @@ import { userService } from '../api/user.service.js';
 
 let modalInstance = null; // Guardará la instancia del modal de Bootstrap
 let originalMail = null;
+let usuarios = [];      // Lista completa de usuarios
+let currentPage = 1;
+const pageSize = 5;     // Usuarios por página
+
 
 
 // --- FUNCIONES DE VISTA (Generación de HTML) ---
@@ -189,11 +193,55 @@ document.getElementById('create-user-form').addEventListener('submit', async (e)
 
 // --- FUNCIÓN PRINCIPAL DE INICIALIZACIÓN ---
 
+// async function init() {
+//   const userString = localStorage.getItem('user');
+//   const currentUser = JSON.parse(userString);
+
+//   // Validar permisos (solo roles 1 y 2 pueden ver el módulo)
+//   if (![1, 2].includes(currentUser?.id_rol)) {
+//     const userSection = document.getElementById('user-management-section');
+//     if (userSection) {
+//       userSection.innerHTML = `
+//         <div class="alert alert-warning text-center">
+//           No tienes permiso para acceder al módulo de usuarios.
+//         </div>
+//       `;
+//     }
+//     return; // Evita que se ejecute el resto de init()
+//   }
+//   const tableBody = document.getElementById('users-table-body');
+//   if (!tableBody) return;
+
+//   tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Cargando usuarios...</td></tr>'; // ✅ CORRECCIÓN: colspan="6"
+
+//   try {
+//     const users = await userService.getUsersByCentro();
+//     if (users && users.length > 0) {
+//       tableBody.innerHTML = users.map(createUserRow).join('');
+//     } else {
+//       tableBody.innerHTML = '<tr><td colspan="6" class="text-center">No se encontraron usuarios.</td></tr>'; // ✅ CORRECCIÓN: colspan="6"
+//     }
+//   } catch (error) {
+//     console.error('Error al obtener los usuarios:', error);
+//     tableBody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Error al cargar los datos.</td></tr>`; // ✅ CORRECCIÓN: colspan="6"
+//   }
+
+//   // Aplicamos el patrón remove/add para evitar listeners duplicados
+//   const editForm = document.getElementById('edit-user-form');
+//   tableBody.removeEventListener('click', handleTableClick);
+//   tableBody.addEventListener('click', handleTableClick);
+//   tableBody.removeEventListener('change', handleStatusSwitch);
+//   tableBody.addEventListener('change', handleStatusSwitch);
+//   editForm.removeEventListener('submit', handleUpdateSubmit);
+//   editForm.addEventListener('submit', handleUpdateSubmit);
+
+// }
+
 async function init() {
   const userString = localStorage.getItem('user');
   const currentUser = JSON.parse(userString);
 
-  // Validar permisos (solo roles 1 y 2 pueden ver el módulo)
+  // Verificación de permisos
   if (![1, 2].includes(currentUser?.id_rol)) {
     const userSection = document.getElementById('user-management-section');
     if (userSection) {
@@ -203,26 +251,26 @@ async function init() {
         </div>
       `;
     }
-    return; // Evita que se ejecute el resto de init()
+    return;
   }
+
   const tableBody = document.getElementById('users-table-body');
   if (!tableBody) return;
-
-  tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Cargando usuarios...</td></tr>'; // ✅ CORRECCIÓN: colspan="6"
+  tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Cargando usuarios...</td></tr>';
 
   try {
-    const users = await userService.getUsersByCentro();
-    if (users && users.length > 0) {
-      tableBody.innerHTML = users.map(createUserRow).join('');
-    } else {
-      tableBody.innerHTML = '<tr><td colspan="6" class="text-center">No se encontraron usuarios.</td></tr>'; // ✅ CORRECCIÓN: colspan="6"
+    usuarios = await userService.getUsersByCentro(); // ← se guarda globalmente
+    if (usuarios.length === 0) {
+      tableBody.innerHTML = '<tr><td colspan="6" class="text-center">No se encontraron usuarios.</td></tr>';
+      return;
     }
+    renderizarUsuarios();  // ← muestra la primera página
+    renderizarPaginador(); // ← genera el paginador
   } catch (error) {
     console.error('Error al obtener los usuarios:', error);
-    tableBody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Error al cargar los datos.</td></tr>`; // ✅ CORRECCIÓN: colspan="6"
+    tableBody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Error al cargar los datos.</td></tr>`;
   }
 
-  // Aplicamos el patrón remove/add para evitar listeners duplicados
   const editForm = document.getElementById('edit-user-form');
   tableBody.removeEventListener('click', handleTableClick);
   tableBody.addEventListener('click', handleTableClick);
@@ -230,7 +278,74 @@ async function init() {
   tableBody.addEventListener('change', handleStatusSwitch);
   editForm.removeEventListener('submit', handleUpdateSubmit);
   editForm.addEventListener('submit', handleUpdateSubmit);
+}
 
+function renderizarUsuarios() {
+  const tableBody = document.getElementById('users-table-body');
+  tableBody.innerHTML = "";
+
+  const inicio = (currentPage - 1) * pageSize;
+  const fin = inicio + pageSize;
+  const paginaActual = usuarios.slice(inicio, fin);
+
+  if (paginaActual.length === 0) {
+    tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No hay usuarios en esta página.</td></tr>';
+    return;
+  }
+
+  tableBody.innerHTML = paginaActual.map(createUserRow).join("");
+}
+
+function renderizarPaginador() {
+  const totalPages = Math.ceil(usuarios.length / pageSize);
+  const paginador = document.getElementById("paginador-usuarios"); // ID en tu HTML
+  paginador.innerHTML = "";
+
+  if (totalPages <= 1) return;
+
+  const ul = document.createElement("ul");
+  ul.className = "pagination justify-content-center my-3";
+
+  const crearItem = (label, page, disabled = false, active = false) => {
+    const li = document.createElement("li");
+    li.className = `page-item ${disabled ? "disabled" : ""} ${active ? "active" : ""}`;
+
+    const a = document.createElement("a");
+    a.className = "page-link";
+    a.href = "#";
+    a.textContent = label;
+
+    a.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (!disabled && currentPage !== page) {
+        currentPage = page;
+        renderizarUsuarios();
+        renderizarPaginador();
+      }
+    });
+
+    li.appendChild(a);
+    return li;
+  };
+
+  ul.appendChild(crearItem("«", currentPage - 1, currentPage === 1));
+
+  let startPage = Math.max(1, currentPage - 2);
+  let endPage = Math.min(totalPages, currentPage + 2);
+
+  if (currentPage <= 3) {
+    endPage = Math.min(5, totalPages);
+  } else if (currentPage >= totalPages - 2) {
+    startPage = Math.max(1, totalPages - 4);
+  }
+
+  for (let i = startPage; i <= endPage; i++) {
+    ul.appendChild(crearItem(i, i, false, i === currentPage));
+  }
+
+  ul.appendChild(crearItem("»", currentPage + 1, currentPage === totalPages));
+
+  paginador.appendChild(ul);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
