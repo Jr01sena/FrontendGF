@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   <link rel="apple-touch-icon" sizes="76x76" href="./assets/img/apple-icon.png">
   <link rel="icon" type="image/png" href="./assets/img/favicon.png">
   <title>
-    Material Dashboard 3 by Creative Tim
+    Gestor Información SENA
   </title>
   <!--     Fonts and icons     -->
   <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Inter:300,400,500,600,700,900" />
@@ -22,16 +22,6 @@
   <link id="pagestyle" href="./assets/css/material-dashboard.css?v=3.2.0" rel="stylesheet" />
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <style>
-    #busqueda-programa::placeholder {
-      color: #9e9e9e;
-      font-style: italic;
-    }
-
-    #busqueda-programa:focus {
-      box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25); /* Bootstrap azul */
-    }
- </style>
  <style>
     .modal-dialog {
       max-width: 800px;
@@ -69,7 +59,7 @@
           </li>
           <li class="nav-item">
             <a class="nav-link text-dark" href="#" data-page="usuarios">
-              <i class="material-symbols-rounded opacity-5">table_view</i>
+              <i class="material-symbols-rounded opacity-5">supervisor_account</i>
               <span class="nav-link-text ms-1">Usuarios</span>
             </a>
           </li>
@@ -86,8 +76,14 @@
             </a>
           </li>
           <li class="nav-item">
+            <a class="nav-link text-dark" href="#" data-page="cargararchivos">
+              <i class="material-symbols-rounded opacity-5">upload_file</i>
+              <span class="nav-link-text ms-1">Cargar Archivos</span>
+            </a>
+          </li>
+          <li class="nav-item">
             <a class="nav-link text-dark" href="#" data-page="programas">
-              <i class="material-symbols-rounded opacity-5">table_view</i>
+              <i class="material-symbols-rounded opacity-5">school</i>
               <span class="nav-link-text ms-1">Programa Formación</span>
             </a>
           </li>
@@ -101,12 +97,6 @@
             <a class="nav-link text-dark" href="#" data-page="calendario">
               <i class="material-symbols-rounded opacity-5">calendar_month</i>
               <span class="nav-link-text ms-1">Calendario</span>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link text-dark" href="#" data-page="cargararchivos">
-              <i class="material-symbols-rounded opacity-5">upload_file</i>
-              <span class="nav-link-text ms-1">Cargar Archivos</span>
             </a>
           </li>
           <li class="nav-item">
@@ -125,12 +115,6 @@
             <a class="nav-link text-dark" href="#" data-page="notifications">
               <i class="material-symbols-rounded opacity-5">notifications</i>
               <span class="nav-link-text ms-1">Notifications</span>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link text-dark" href="#" data-page="cargararchivos">
-              <i class="material-symbols-rounded opacity-5">upload_file</i>
-              <span class="nav-link-text ms-1">Cargar Archivos</span>
             </a>
           </li>
           <li class="nav-item mt-3">
@@ -159,11 +143,6 @@
         </nav>
         <div class="collapse navbar-collapse mt-sm-0 mt-2 me-md-0 me-sm-4" id="navbar">
           <div class="ms-md-auto pe-md-3 d-flex align-items-center">
-            <div class="input-group input-group-outline">
-              <label class="form-label">Type here...</label>
-              <input type="text" class="form-control">
-            </div>
-          </div>
           <ul class="navbar-nav d-flex align-items-center  justify-content-end">
             <li class="nav-item d-xl-none ps-3 d-flex align-items-center">
               <a href="javascript:;" class="nav-link text-body p-0" id="iconNavbarSidenav">
@@ -176,21 +155,17 @@
             </li>
             <!-- Menú de usuario con logout -->
             <li class="nav-item dropdown d-flex align-items-center">
-              <a href="#" class="nav-link text-body font-weight-bold px-0" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="material-symbols-rounded">account_circle</i>
+              <a href="#" class="nav-link text-body font-weight-bold px-0 d-flex align-items-center" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <div id="userAvatar" class="rounded-circle bg-gradient-success d-flex justify-content-center align-items-center text-white me-2" style="width: 36px; height: 36px; font-weight: bold;"></div>
               </a>
               <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                <li>
-                  <a class="dropdown-item" href="#" data-page="profile">Perfil</a>
-                </li>
-                <li>
-                  <hr class="dropdown-divider">
-                </li>
-                <li>
-                  <a class="dropdown-item" href="#" id="logout-button">Salir</a>
-                </li>
+                <li><a class="dropdown-item" href="#" data-page="profile">Perfil</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#" id="logout-button">Salir</a></li>
               </ul>
             </li>
+
+
           </ul>
         </div>
       </div>
@@ -211,6 +186,35 @@
   <script src="./js/main.js" type="module"></script>
   <!-- Bootstrap JS (bundle incluye Popper) -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Bootstrap JS (versión 5.x) + Popper.js -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const avatar = document.getElementById("userAvatar");
+
+      try {
+        const userData = JSON.parse(localStorage.getItem("user"));
+
+        let iniciales = "U";
+        if (userData?.nombre_completo) {
+          const partes = userData.nombre_completo.trim().split(" ");
+          if (partes.length >= 2) {
+            iniciales = partes[0][0] + partes[1][0]; // Ej: Don Ramon → DR
+          } else if (partes.length === 1) {
+            iniciales = partes[0][0]; // Ej: "Don" → D
+          }
+        }
+
+        if (avatar) avatar.textContent = iniciales.toUpperCase();
+      } catch (error) {
+        console.error("Error leyendo el nombre del usuario", error);
+        if (avatar) avatar.textContent = "U";
+      }
+    });
+
+  </script>
+
 </body>
 
 </html>

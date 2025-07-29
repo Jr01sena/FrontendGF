@@ -11,7 +11,7 @@ function debounce(func, delay) {
 
 
 let currentPage = 1; // Página actual
-const pageSize = 10; // Número de programas por página
+const pageSize = 5; // Número de programas por página
 let totalPages = 1;
 let modoBusqueda = false; // Indica si estamos en modo búsqueda
 

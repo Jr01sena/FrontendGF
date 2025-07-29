@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await authService.loginUser(username, password);
 
             // Si el login es exitoso...
+            console.log('Login exitoso:', data);
 
             // 1. Guardar los datos en localStorage
             // El token se guarda como string, el objeto de usuario como un string JSON

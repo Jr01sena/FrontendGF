@@ -1,7 +1,7 @@
 import { userService } from '../api/user.service.js';
 
 let modalInstance = null; // Guardará la instancia del modal de Bootstrap
-let originalMail = null; // Guardará el correo original para validación
+let originalMail = null;
 // --- FUNCIONES DE VISTA (Generación de HTML) ---
 
 function createUserRow(user) {
@@ -11,40 +11,61 @@ function createUserRow(user) {
 
   const userId = user.id_usuario;
 
+  // Extraer iniciales de nombre_completo
+  let iniciales = "U";
+  if (user?.nombre_completo) {
+    const partes = user.nombre_completo.trim().split(" ");
+    if (partes.length >= 2) {
+      iniciales = partes[0][0] + partes[1][0];
+    } else {
+      iniciales = partes[0][0];
+    }
+  }
+
   return `
     <tr>
-    <td>
-      <div class="d-flex px-2 py-1">
-        <div>
-          <img src="../assets/img/team-2.jpg" class="avatar avatar-sm me-3 border-radius-lg" alt="user1">
+      <td class="align-middle">
+        <div class="d-flex px-2 py-1">
+          <div>
+            <div class="avatar bg-gradient-dark text-white fw-bold rounded-circle d-flex align-items-center justify-content-center me-3"
+                 style="width: 36px; height: 36px;">
+              ${iniciales.toUpperCase()}
+            </div>
+          </div>
+          <div class="d-flex flex-column justify-content-center">
+            <h6 class="mb-0 text-sm">${user.nombre_completo}</h6>
+            <p class="text-xs text-secondary mb-0">${user.identificacion}</p>
+          </div>
         </div>
-        <div class="d-flex flex-column justify-content-center">
-          <h6 class="mb-0 text-sm">${user.nombre_completo}</h6>
-          <p class="text-xs text-secondary mb-0">${user.identificacion}</p>
+      </td>
+      <td class="align-middle">
+        <p class="text-xs font-weight-bold mb-0">${user.correo}</p>
+      </td>
+      <td class="text-center align-middle">
+        <p class="text-xs text-secondary mb-0">${user.telefono}</p>
+      </td>
+      <td class="px-0">
+        <div class="form-check form-switch ms-2 d-inline-block">
+          <input class="form-check-input user-status-switch" type="checkbox" role="switch" 
+                 id="switch-${userId}" data-user-id="${userId}" 
+                 ${user.estado ? 'checked' : ''}>
+          <label class="form-check-label" for="switch-${userId}">
+            ${user.estado ? 'Activo' : 'Inactivo'}
+          </label>
         </div>
-      </div>
-    </td>
-    <td>
-      <p class="text-xs font-weight-bold mb-0">${user.correo}</p>
-    </td>
-    <td>
-      <p class="text-xs text-secondary mb-0">${user.telefono}</p>
-    </td>
-    <td class="px-0"><div class="form-check form-switch ms-2 d-inline-block">
-            <input class="form-check-input user-status-switch" type="checkbox" role="switch" 
-                   id="switch-${userId}" data-user-id="${userId}" 
-                   ${user.estado ? 'checked' : ''}>
-            <label class="form-check-label" for="switch-${userId}">
-              ${user.estado ? 'Activo' : 'Inactivo'}
-            </label>
-          </div></td>
-      <td class="px-0 text-dark fw-medium text-end">${user.rol}</td>
-      <td class="px-0 text-end">
-          <button class="btn btn-sm btn-success btn-edit-user" data-user-id="${userId}">Editar</button>
+      </td>
+      <td class="text-center align-middle">
+        <span class="text-xs font-weight-bold text-secondary badge badge-pill">${user.rol}</span>
+      </td>
+      <td class="text-center align-middle">
+        <button class="btn btn-sm btn-success btn-edit-user" data-user-id="${userId}">
+          Editar
+        </button>
       </td>
     </tr>
   `;
 }
+
 
 // --- LÓGICA DE MODAL ---
 
@@ -56,7 +77,7 @@ async function openEditModal(userId) {
 
   try {
     const user = await userService.getUserById(userId);
-    originalMail = user.correo; // Guardamos el correo original para validación
+    originalMail = user.correo;
     document.getElementById('edit-user-id').value = user.id_usuario;
     document.getElementById('edit-nombre_completo').value = user.nombre_completo;
     document.getElementById('edit-correo').value = user.correo;
@@ -113,7 +134,7 @@ async function handleStatusSwitch(event) {
   const userId = switchElement.dataset.userId;
   const newStatus = switchElement.checked;
   const actionText = newStatus ? 'activar' : 'desactivar';
-
+  
   if (confirm(`¿Estás seguro de que deseas ${actionText} este usuario?`)) {
     try {
       await userService.deleteUser(userId); // Esta función maneja el cambio de estado
@@ -130,6 +151,40 @@ async function handleStatusSwitch(event) {
     switchElement.checked = !newStatus;
   }
 }
+
+document.getElementById('btn-open-create-user').addEventListener('click', () => {
+  const modal = new bootstrap.Modal(document.getElementById('create-user-modal'));
+  modal.show();
+});
+
+document.getElementById('create-user-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const userString = localStorage.getItem('user');
+  const user = JSON.parse(userString);
+
+  const newUser = {
+    nombre_completo: document.getElementById('create-nombre_completo').value,
+    identificacion: document.getElementById('create-identificacion').value,
+    correo: document.getElementById('create-correo').value,
+    pass_hash: document.getElementById('create-pass_hash').value,
+    telefono: document.getElementById('create-telefono').value,
+    tipo_contrato: document.getElementById('create-tipo_contrato').value,
+    id_rol: parseInt(document.getElementById('create-id_rol').value),
+    estado: true,
+    cod_centro: user.cod_centro
+  };
+
+  try {
+    await userService.createUser(newUser);
+    bootstrap.Modal.getInstance(document.getElementById('create-user-modal')).hide();
+    alert('Usuario creado exitosamente');
+    init(); // recargar tabla
+  } catch (error) {
+    alert(error?.message || 'Error al crear usuario');
+    console.error('Error creando usuario:', error);
+  }
+});
+
 
 // --- FUNCIÓN PRINCIPAL DE INICIALIZACIÓN ---
 
@@ -159,6 +214,7 @@ async function init() {
   tableBody.addEventListener('change', handleStatusSwitch);
   editForm.removeEventListener('submit', handleUpdateSubmit);
   editForm.addEventListener('submit', handleUpdateSubmit);
+
 }
 
 export { init };
