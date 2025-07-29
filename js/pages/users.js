@@ -2,8 +2,9 @@ import { userService } from '../api/user.service.js';
 
 let modalInstance = null; // Guardará la instancia del modal de Bootstrap
 let originalMail = null;
-// --- FUNCIONES DE VISTA (Generación de HTML) ---
 
+
+// --- FUNCIONES DE VISTA (Generación de HTML) ---
 function createUserRow(user) {
   const statusBadge = user.estado
     ? `<span class="badge bg-success">Activo</span>`
@@ -189,6 +190,21 @@ document.getElementById('create-user-form').addEventListener('submit', async (e)
 // --- FUNCIÓN PRINCIPAL DE INICIALIZACIÓN ---
 
 async function init() {
+  const userString = localStorage.getItem('user');
+  const currentUser = JSON.parse(userString);
+
+  // Validar permisos (solo roles 1 y 2 pueden ver el módulo)
+  if (![1, 2].includes(currentUser?.id_rol)) {
+    const userSection = document.getElementById('user-management-section');
+    if (userSection) {
+      userSection.innerHTML = `
+        <div class="alert alert-warning text-center">
+          No tienes permiso para acceder al módulo de usuarios.
+        </div>
+      `;
+    }
+    return; // Evita que se ejecute el resto de init()
+  }
   const tableBody = document.getElementById('users-table-body');
   if (!tableBody) return;
 
@@ -216,5 +232,17 @@ async function init() {
   editForm.addEventListener('submit', handleUpdateSubmit);
 
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (user && user.id_rol === 3) {
+    const userMenuItem = document.querySelector('[data-page="usuarios"]');
+    if (userMenuItem) {
+      userMenuItem.style.display = 'none';
+    }
+  }
+});
+
+
 
 export { init };

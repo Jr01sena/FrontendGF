@@ -13,26 +13,17 @@
               <div class="row justify-content-center">
                 <div class="col-md-8 text-center">
                   <div class="py-5">
-                    <i class="material-symbols-rounded mb-3" style="font-size: 4rem; color: #4caf50;">person</i>
+                    <i class="material-symbols-rounded mb-3" style="font-size: 6rem; color: #4caf50;">account_circle</i>
                     <h3 class="text-dark mb-3">Gestión de Perfil</h3>
-                    <p class="text-muted mb-4">
-                      Desde aquí podrás gestionar tu información personal y configuraciones de cuenta. Esta funcionalidad está en desarrollo.
-                    </p>
-                    <div class="alert alert-success">
-                      <strong>Próximas funcionalidades:</strong>
-                      <ul class="list-unstyled mb-0 mt-2">
-                        <li>• Editar información personal</li>
-                        <li>• Cambiar contraseña</li>
-                        <li>• Configurar preferencias</li>
-                        <li>• Gestionar sesiones activas</li>
-                        <li>• Historial de actividad</li>
-                      </ul>
-                    </div>
-                    <div class="mt-4">
-                      <span class="text-muted" id="user-info">
-                        <small>Usuario actual cargado desde localStorage</small>
-                      </span>
-                    </div>
+
+                    <!-- Aquí se mostrará la información del usuario -->
+                    <div id="perfil-user-info" class="mb-4 text-start px-4"></div>
+
+                    <!-- Botón para editar perfil -->
+                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#editarPerfilModal" id="btn-editar-perfil">
+                      <i class="material-symbols-rounded me-1">edit</i> Editar Perfil
+                    </button>
+
                   </div>
                 </div>
               </div>
@@ -43,27 +34,40 @@
     </div>
   </div>
 </main>
+<!-- Modal de edición de usuario -->
+<div class="modal fade" id="editarPerfilModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow-lg border-0">
+      <div class="modal-header bg-gradient-success text-white">
+        <h5 class="modal-title"><i class="material-symbols-rounded me-2">edit</i>Editar Perfil</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body px-4 py-3">
+        <form id="editarPerfilForm" class="needs-validation" novalidate>
+          <div class="mb-3">
+            <label for="nombre_completo" class="form-label">Nombre Completo</label>
+            <input type="text" class="form-control" id="nombre_completo" name="nombre_completo" required minlength="3" maxlength="80">
+          </div>
+          <div class="mb-3">
+            <label for="tipo_contrato" class="form-label">Tipo de Contrato</label>
+            <input type="text" class="form-control" id="tipo_contrato" name="tipo_contrato" required minlength="6" maxlength="50">
+          </div>
+          <div class="mb-3">
+            <label for="telefono" class="form-label">Teléfono</label>
+            <input type="text" class="form-control" id="telefono" name="telefono" required minlength="7" maxlength="15">
+          </div>
+          <div class="mb-3">
+            <label for="correo" class="form-label">Correo Electrónico</label>
+            <input type="email" class="form-control" id="correo" name="correo" required maxlength="100">
+          </div>
+          <div class="text-end">
+            <button type="submit" class="btn btn-success">
+              <i class="material-symbols-rounded me-1">save</i> Guardar Cambios
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 
-<script>
-// Mostrar información básica del usuario logueado
-document.addEventListener('DOMContentLoaded', () => {
-  try {
-    const userString = localStorage.getItem('user');
-    if (userString) {
-      const user = JSON.parse(userString);
-      const userInfoElement = document.getElementById('user-info');
-      if (userInfoElement && user.nombre_completo) {
-        userInfoElement.innerHTML = `
-          <strong>Bienvenido, ${user.nombre_completo}</strong><br>
-          <small class="text-muted">
-            ${user.correo || ''}<br>
-            ${user.nombre_rol || user.rol || ''}
-          </small>
-        `;
-      }
-    }
-  } catch (error) {
-    console.error('Error al cargar información del usuario:', error);
-  }
-});
-</script> 

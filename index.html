@@ -57,7 +57,7 @@
               <span class="nav-link-text ms-1">Dashboard</span>
             </a>
           </li>
-          <li class="nav-item">
+          <li class="nav-item" id="nav-users">
             <a class="nav-link text-dark" href="#" data-page="usuarios">
               <i class="material-symbols-rounded opacity-5">supervisor_account</i>
               <span class="nav-link-text ms-1">Usuarios</span>
@@ -123,7 +123,7 @@
           <li class="nav-item">
             <a class="nav-link text-dark" href="#" data-page="profile">
               <i class="material-symbols-rounded opacity-5">person</i>
-              <span class="nav-link-text ms-1">Profile</span>
+              <span class="nav-link-text ms-1">Perfil</span>
             </a>
           </li>
         </ul>
@@ -153,17 +153,27 @@
                 </div>
               </a>
             </li>
-            <!-- Menú de usuario con logout -->
-            <li class="nav-item dropdown d-flex align-items-center">
+            <!-- Menú de usuario con dropdown y logout -->
+            <li class="nav-item dropdown d-flex align-items-center ms-3">
               <a href="#" class="nav-link text-body font-weight-bold px-0 d-flex align-items-center" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                <div id="userAvatar" class="rounded-circle bg-gradient-success d-flex justify-content-center align-items-center text-white me-2" style="width: 36px; height: 36px; font-weight: bold;"></div>
+                <div id="userAvatar" class="rounded-circle bg-gradient-success text-white d-flex justify-content-center align-items-center me-2" style="width: 36px; height: 36px; font-weight: 600;"></div>
+                <span id="userName" class="d-none d-md-inline text-dark fw-semibold"></span>
+                <i class="material-symbols-rounded ms-1 opacity-6">expand_more</i>
               </a>
-              <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                <li><a class="dropdown-item" href="#" data-page="profile">Perfil</a></li>
-                <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item" href="#" id="logout-button">Salir</a></li>
+              <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2" aria-labelledby="userDropdown" style="min-width: 180px; border-radius: 0.75rem;">
+                <li>
+                  <h6 class="dropdown-header text-muted small mb-0">Cuenta</h6>
+                </li>
+                <li><a class="dropdown-item d-flex align-items-center" href="#" data-page="profile">
+                  <i class="material-symbols-rounded me-2 opacity-60">person</i> Perfil
+                </a></li>
+                <li><hr class="dropdown-divider my-1"></li>
+                <li><a class="dropdown-item d-flex align-items-center text-danger" href="#" id="logout-button">
+                  <i class="material-symbols-rounded me-2 opacity-60">logout</i> Salir
+                </a></li>
               </ul>
             </li>
+
 
 
           </ul>
@@ -214,6 +224,18 @@
     });
 
   </script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (user?.id_rol === 3) {
+        const userMenuItem = document.querySelector('[data-page="usuarios"]');
+        if (userMenuItem) {
+          userMenuItem.closest('.nav-item').style.display = 'none';
+        }
+      }
+    });
+  </script>
+
 
 </body>
 

@@ -176,9 +176,16 @@ const loadPageModule = async (page) => {
         }
         break;
 
+      case 'profile':
+        const profileModule = await import('./pages/profile.js');
+        if (profileModule.init) {
+          profileModule.init();
+        }
+        break;
+
+
       case 'billing':
       case 'notifications':
-      case 'profile':
         break;
 
       default:
