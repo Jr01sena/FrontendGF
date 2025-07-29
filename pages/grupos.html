@@ -1,0 +1,309 @@
+<main class="main-content position-relative max-height-vh-100 h-100 border-radius-lg ">
+  <div class="container-fluid py-2">
+    
+    <!-- Selector de Ficha -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+            <div class="bg-gradient-success shadow-success border-radius-lg pt-4 pb-3">
+              <h6 class="text-white text-capitalize mb-0 px-3">Seleccionar Ficha</h6>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="row align-items-center">
+              <div class="col-md-8">
+                <label for="selector-ficha" class="form-label text-dark fw-bold">Código de Ficha</label>
+                <input type="text" class="form-control border px-3" id="selector-ficha" 
+                       placeholder="Ingrese el código de ficha (ej: 2896515)" maxlength="20">
+                <small class="text-muted">Ingrese el código de ficha para cargar la información de grupos</small>
+              </div>
+              <div class="col-md-4">
+                <button type="button" class="btn btn-success w-100" id="btn-cargar-ficha">
+                  <i class="material-symbols-rounded me-2">search</i>
+                  Cargar Información
+                </button>
+              </div>
+            </div>
+            
+            <!-- Estado de carga -->
+            <div id="ficha-loading" class="text-center py-3" style="display: none;">
+              <div class="spinner-border text-success" role="status">
+                <span class="visually-hidden">Cargando...</span>
+              </div>
+              <p class="mt-2 text-muted">Cargando información de la ficha...</p>
+            </div>
+
+            <!-- Mensaje de error -->
+            <div id="ficha-error" class="alert alert-danger mt-3" style="display: none;">
+              <span id="ficha-error-text"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contenedor principal que se muestra cuando hay datos -->
+    <div id="grupos-content" style="display: none;">
+      
+      <!-- Sección 1: Datos del Grupo (Solo lectura) -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+              <div class="bg-gradient-success shadow-success border-radius-lg pt-4 pb-3">
+                <h6 class="text-white text-capitalize mb-0 px-3">Información del Grupo (Solo Lectura)</h6>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="datos-grupo-content">
+                <!-- El contenido se llena dinámicamente -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección 2: Configuración del Grupo (Editable) -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+              <div class="bg-gradient-success shadow-success border-radius-lg pt-4 pb-3">
+                <div class="d-flex justify-content-between align-items-center px-3">
+                  <h6 class="text-white text-capitalize mb-0">Configuración del Grupo</h6>
+                  <button type="button" class="btn btn-success btn-sm" id="btn-edit-grupo">
+                    <i class="material-symbols-rounded me-1">edit</i>
+                    Editar Horario y Ambiente
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="grupo-config-content">
+                <!-- El contenido se llena dinámicamente -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección 3: Asignación de Instructores (CRUD) -->
+      <div class="row">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+              <div class="bg-gradient-success shadow-success border-radius-lg pt-4 pb-3">
+                <div class="d-flex justify-content-between align-items-center px-3">
+                  <h6 class="text-white text-capitalize mb-0">Instructores Asignados</h6>
+                  <button type="button" class="btn btn-success btn-sm" id="btn-asignar-instructor" 
+                          data-bs-toggle="modal" data-bs-target="#asignar-instructor-modal">
+                    <i class="material-symbols-rounded me-1">person_add</i>
+                    Asignar Instructor
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="card-body px-0 pb-2">
+              <!-- Indicador de carga -->
+              <div id="instructores-loading" class="text-center py-5">
+                <div class="spinner-border text-success" role="status">
+                  <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="mt-2 text-muted">Cargando instructores asignados...</p>
+              </div>
+
+              <!-- Mensaje de error -->
+              <div id="instructores-error" class="alert alert-danger mx-3" style="display: none;">
+                <span id="instructores-error-text"></span>
+              </div>
+
+              <!-- Tabla de instructores -->
+              <div id="instructores-table-container" class="table-responsive p-0" style="display: none;">
+                <table class="table align-items-center mb-0">
+                  <thead>
+                    <tr>
+                      <th scope="col" class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                        Instructor</th>
+                      <th scope="col" class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+                        Fecha Asignación</th>
+                      <th scope="col" class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                        Estado</th>
+                      <th scope="col" class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                        Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="instructores-table-body">
+                    <!-- Las filas se generan dinámicamente -->
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Mensaje cuando no hay datos -->
+              <div id="instructores-no-data" class="text-center py-5" style="display: none;">
+                <i class="material-icons text-muted" style="font-size: 48px;">person_off</i>
+                <p class="text-muted mt-2">No hay instructores asignados a esta ficha</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Modal para editar configuración del grupo -->
+<div class="modal fade" id="edit-grupo-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Editar Configuración del Grupo</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="edit-grupo-form">
+        <div class="modal-body">
+          <div class="alert alert-success border-0" style="background: linear-gradient(195deg, #66BB6A 0%, #43A047 100%); color: white;">
+            <strong>Código de Ficha:</strong> <span id="modal-cod-ficha">-</span>
+          </div>
+
+          <div class="row">
+            <!-- Hora de Inicio -->
+            <div class="col-md-6 mb-3">
+              <label for="hora_inicio" class="form-label text-dark fw-bold">Hora de Inicio</label>
+              <input type="time" class="form-control border px-3" id="hora_inicio" name="hora_inicio" required>
+              <small class="text-muted">Hora de inicio de las clases</small>
+            </div>
+            
+            <!-- Hora de Fin -->
+            <div class="col-md-6 mb-3">
+              <label for="hora_fin" class="form-label text-dark fw-bold">Hora de Fin</label>
+              <input type="time" class="form-control border px-3" id="hora_fin" name="hora_fin" required>
+              <small class="text-muted">Hora de finalización de las clases</small>
+            </div>
+          </div>
+
+          <!-- Ambiente -->
+          <div class="mb-3">
+            <label for="id_ambiente" class="form-label text-dark fw-bold">Ambiente de Formación</label>
+            <select class="form-select border px-3" id="id_ambiente" name="id_ambiente" required>
+              <option value="">Seleccione un ambiente...</option>
+              <!-- Las opciones se cargan dinámicamente -->
+            </select>
+            <small class="text-muted">Ambiente donde se desarrollarán las clases</small>
+          </div>
+
+          <!-- Mensaje de error en el modal -->
+          <div id="edit-grupo-error" class="alert alert-danger" style="display: none;">
+            <span id="edit-grupo-error-text"></span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success" id="btn-submit-edit-grupo">
+            <span id="edit-grupo-submit-text">Actualizar Configuración</span>
+            <span id="edit-grupo-submit-loading" class="spinner-border spinner-border-sm ms-2" style="display: none;"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para asignar instructor -->
+<div class="modal fade" id="asignar-instructor-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Asignar Instructor</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="asignar-instructor-form">
+        <div class="modal-body">
+          <div class="alert alert-success border-0" style="background: linear-gradient(195deg, #66BB6A 0%, #43A047 100%); color: white;">
+            <strong>Ficha:</strong> <span id="modal-asignar-cod-ficha">-</span>
+          </div>
+
+          <!-- Instructor -->
+          <div class="mb-3">
+            <label for="id_instructor" class="form-label text-dark fw-bold">Instructor</label>
+            <select class="form-select border px-3" id="id_instructor" name="id_instructor" required>
+              <option value="">Seleccione un instructor...</option>
+              <!-- Las opciones se cargan dinámicamente -->
+            </select>
+            <small class="text-muted">Instructor que se asignará a la ficha</small>
+          </div>
+
+          <!-- Fecha de Asignación -->
+          <div class="mb-3">
+            <label for="fecha_asignacion" class="form-label text-dark fw-bold">Fecha de Asignación</label>
+            <input type="date" class="form-control border px-3" id="fecha_asignacion" name="fecha_asignacion" required>
+            <small class="text-muted">Fecha en que inicia la asignación</small>
+          </div>
+
+          <!-- Mensaje de error en el modal -->
+          <div id="asignar-instructor-error" class="alert alert-danger" style="display: none;">
+            <span id="asignar-instructor-error-text"></span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success" id="btn-submit-asignar-instructor">
+            <span id="asignar-instructor-submit-text">Asignar Instructor</span>
+            <span id="asignar-instructor-submit-loading" class="spinner-border spinner-border-sm ms-2" style="display: none;"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para editar asignación de instructor -->
+<div class="modal fade" id="edit-asignacion-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Editar Asignación de Instructor</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="edit-asignacion-form">
+        <div class="modal-body">
+          <div class="alert alert-success border-0" style="background: linear-gradient(195deg, #66BB6A 0%, #43A047 100%); color: white;">
+            <strong>Ficha:</strong> <span id="modal-edit-cod-ficha">-</span>
+          </div>
+
+          <!-- ID de la asignación (oculto) -->
+          <input type="hidden" id="edit_asignacion_id" name="id">
+
+          <!-- Instructor -->
+          <div class="mb-3">
+            <label for="edit_id_instructor" class="form-label text-dark fw-bold">Instructor</label>
+            <select class="form-select border px-3" id="edit_id_instructor" name="id_instructor" required>
+              <option value="">Seleccione un instructor...</option>
+              <!-- Las opciones se cargan dinámicamente -->
+            </select>
+            <small class="text-muted">Instructor asignado a la ficha</small>
+          </div>
+
+          <!-- Fecha de Asignación -->
+          <div class="mb-3">
+            <label for="edit_fecha_asignacion" class="form-label text-dark fw-bold">Fecha de Asignación</label>
+            <input type="date" class="form-control border px-3" id="edit_fecha_asignacion" name="fecha_asignacion" required>
+            <small class="text-muted">Fecha en que inicia la asignación</small>
+          </div>
+
+          <!-- Mensaje de error en el modal -->
+          <div id="edit-asignacion-error" class="alert alert-danger" style="display: none;">
+            <span id="edit-asignacion-error-text"></span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success" id="btn-submit-edit-asignacion">
+            <span id="edit-asignacion-submit-text">Actualizar Asignación</span>
+            <span id="edit-asignacion-submit-loading" class="spinner-border spinner-border-sm ms-2" style="display: none;"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div> 

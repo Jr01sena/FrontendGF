@@ -1,0 +1,226 @@
+<main class="main-content position-relative max-height-vh-100 h-100 border-radius-lg ">
+  <div class="container-fluid py-2">
+    <div class="row">
+      <div class="col-12">
+        <div class="card my-4">
+          <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+            <div class="bg-gradient-success shadow-success border-radius-lg pt-4 pb-3">
+              <div class="d-flex justify-content-between align-items-center px-3">
+                <h6 class="text-white text-capitalize mb-0">Ambientes de Formación</h6>
+                <div class="d-flex align-items-center gap-2">
+                  <button type="button" class="btn btn-success btn-sm" id="btn-create-ambiente" data-bs-toggle="modal" data-bs-target="#create-ambiente-modal">
+                     Crear Ambiente
+                  </button>
+                  <span class="badge badge-sm bg-white text-dark" id="centro-info">
+                    
+                    <span id="centro-nombre">Cargando...</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card-body px-0 pb-2">
+            <!-- Indicador de carga -->
+            <div id="loading-spinner" class="text-center py-5">
+              <div class="spinner-border text-success" role="status">
+                <span class="visually-hidden">Cargando...</span>
+              </div>
+              <p class="mt-2 text-muted">Cargando ambientes de formación...</p>
+            </div>
+
+            <!-- Mensaje de error -->
+            <div id="error-message" class="alert alert-danger mx-3" style="display: none;">
+              <span class="text-white font-weight-bold" id="error-text"></span>
+            </div>
+
+            <!-- Tabla de ambientes -->
+            <div id="ambientes-table-container" class="table-responsive p-0" style="display: none;">
+              <table class="table align-items-center mb-0">
+                <thead>
+                  <tr>
+                    <th scope="col" class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Ambiente</th>
+                    <th scope="col" class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+                      Ubicación</th>
+                    <th scope="col"
+                      class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Capacidad
+                    </th>
+                    <th scope="col"
+                      class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Municipio
+                    </th>
+                    <th scope="col"
+                      class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Estado
+                    </th>
+                    <th scope="col"
+                      class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Acciones
+                    </th>
+                  </tr>
+                </thead>
+                <tbody id="ambientes-table-body">
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Mensaje cuando no hay datos -->
+            <div id="no-data-message" class="text-center py-5" style="display: none;">
+              <i class="material-icons text-muted" style="font-size: 48px;">meeting_room</i>
+              <p class="text-muted mt-2">No se encontraron ambientes de formación para este centro</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Modal para crear ambiente -->
+<div class="modal fade" id="create-ambiente-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Crear Ambiente de Formación</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="create-ambiente-form">
+        <div class="modal-body">
+          <div class="row">
+            <!-- Nombre del Ambiente -->
+            <div class="col-md-6 mb-3">
+              <label for="nombre_ambiente" class="form-label text-dark fw-bold">Nombre del Ambiente</label>
+              <input type="text" class="form-control border px-3" id="nombre_ambiente" name="nombre_ambiente" 
+                     placeholder="Ej: Agrotics" required maxlength="100">
+              <small class="text-muted">Nombre identificativo del ambiente</small>
+            </div>
+            
+            <!-- Número Máximo de Aprendices -->
+            <div class="col-md-6 mb-3">
+              <label for="num_max_aprendices" class="form-label text-dark fw-bold">Capacidad Máxima</label>
+              <input type="number" class="form-control border px-3" id="num_max_aprendices" name="num_max_aprendices" 
+                     placeholder="Ej: 30" required min="1" max="100">
+              <small class="text-muted">Número máximo de aprendices</small>
+            </div>
+          </div>
+
+          <div class="row">
+            <!-- Municipio -->
+            <div class="col-md-6 mb-3">
+              <label for="municipio" class="form-label text-dark fw-bold">Municipio</label>
+              <input type="text" class="form-control border px-3" id="municipio" name="municipio" 
+                     placeholder="Ej: Pereira" required maxlength="50">
+              <small class="text-muted">Ciudad o municipio donde se ubica</small>
+            </div>
+
+            <!-- Estado -->
+            <div class="col-md-6 mb-3">
+              <label class="form-label text-dark fw-bold">Estado del Ambiente</label>
+              <div class="form-check form-switch ps-0">
+                <input class="form-check-input ms-auto" type="checkbox" id="estado" name="estado" checked>
+                <label class="form-check-label ms-3" for="estado">
+                  <span id="estado-label">Activo</span>
+                </label>
+              </div>
+              <small class="text-muted">Indica si el ambiente está disponible</small>
+            </div>
+          </div>
+          
+          <!-- Ubicación -->
+          <div class="mb-3">
+            <label for="ubicacion" class="form-label text-dark fw-bold">Ubicación</label>
+            <textarea class="form-control border px-3" id="ubicacion" name="ubicacion" rows="3" 
+                      placeholder="Ej: Centro de Atención al Sector Agropecuario, Bloque A, Piso 2" 
+                      required maxlength="200"></textarea>
+            <small class="text-muted">Descripción detallada de la ubicación del ambiente</small>
+          </div>
+
+          <!-- Información del Centro -->
+          <div class="alert alert-success">
+            <strong>Centro:</strong> <span id="modal-centro-info">Se asignará automáticamente tu centro</span>
+          </div>
+
+          <!-- Mensaje de error en el modal -->
+          <div id="modal-error-message" class="alert alert-danger" style="display: none;">
+            <span id="modal-error-text"></span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success" id="btn-submit-ambiente">
+            <span id="submit-text">Crear Ambiente</span>
+            <span id="submit-loading" class="spinner-border spinner-border-sm ms-2" style="display: none;"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para editar ambiente -->
+<div class="modal fade" id="edit-ambiente-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Editar Ambiente de Formación</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="edit-ambiente-form">
+        <div class="modal-body">
+          <div class="row">
+            <!-- ID del Ambiente (solo lectura) -->
+            <div class="col-md-6 mb-3">
+              <label for="edit_id_ambiente" class="form-label text-dark fw-bold">ID del Ambiente</label>
+              <input type="number" class="form-control border px-3 bg-light" id="edit_id_ambiente" name="id_ambiente" 
+                     readonly>
+              <small class="text-muted">El ID del ambiente no se puede modificar</small>
+            </div>
+            
+            <!-- Nombre del Ambiente -->
+            <div class="col-md-6 mb-3">
+              <label for="edit_nombre_ambiente" class="form-label text-dark fw-bold">Nombre del Ambiente</label>
+              <input type="text" class="form-control border px-3" id="edit_nombre_ambiente" name="nombre_ambiente" 
+                     placeholder="Ej: Agrotics" required maxlength="100">
+              <small class="text-muted">Nombre identificativo del ambiente</small>
+            </div>
+          </div>
+
+          <div class="row">
+            <!-- Número Máximo de Aprendices -->
+            <div class="col-md-6 mb-3">
+              <label for="edit_num_max_aprendices" class="form-label text-dark fw-bold">Capacidad Máxima</label>
+              <input type="number" class="form-control border px-3" id="edit_num_max_aprendices" name="num_max_aprendices" 
+                     placeholder="Ej: 30" required min="1" max="100">
+              <small class="text-muted">Número máximo de aprendices</small>
+            </div>
+
+            <!-- Municipio -->
+            <div class="col-md-6 mb-3">
+              <label for="edit_municipio" class="form-label text-dark fw-bold">Municipio</label>
+              <input type="text" class="form-control border px-3" id="edit_municipio" name="municipio" 
+                     placeholder="Ej: Pereira" required maxlength="50">
+              <small class="text-muted">Ciudad o municipio donde se ubica</small>
+            </div>
+          </div>
+          
+          <!-- Ubicación -->
+          <div class="mb-3">
+            <label for="edit_ubicacion" class="form-label text-dark fw-bold">Ubicación</label>
+            <textarea class="form-control border px-3" id="edit_ubicacion" name="ubicacion" rows="3" 
+                      placeholder="Ej: Centro de Atención al Sector Agropecuario, Bloque A, Piso 2" 
+                      required maxlength="200"></textarea>
+            <small class="text-muted">Descripción detallada de la ubicación del ambiente</small>
+          </div>
+
+          <!-- Mensaje de error en el modal -->
+          <div id="edit-modal-error-message" class="alert alert-danger" style="display: none;">
+            <span id="edit-modal-error-text"></span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success" id="btn-submit-edit-ambiente">
+            <span id="edit-submit-text">Actualizar Ambiente</span>
+            <span id="edit-submit-loading" class="spinner-border spinner-border-sm ms-2" style="display: none;"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div> 

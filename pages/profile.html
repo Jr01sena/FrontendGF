@@ -1,0 +1,69 @@
+<main class="main-content position-relative max-height-vh-100 h-100 border-radius-lg">
+  <div class="container-fluid py-4">
+    <div class="row">
+      <div class="col-12">
+        <div class="card my-4">
+          <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+            <div class="bg-gradient-success shadow-success border-radius-lg pt-4 pb-3">
+              <h6 class="text-white text-capitalize ps-3">Perfil de Usuario</h6>
+            </div>
+          </div>
+          <div class="card-body px-0 pb-2">
+            <div class="container">
+              <div class="row justify-content-center">
+                <div class="col-md-8 text-center">
+                  <div class="py-5">
+                    <i class="material-symbols-rounded mb-3" style="font-size: 4rem; color: #4caf50;">person</i>
+                    <h3 class="text-dark mb-3">Gestión de Perfil</h3>
+                    <p class="text-muted mb-4">
+                      Desde aquí podrás gestionar tu información personal y configuraciones de cuenta. Esta funcionalidad está en desarrollo.
+                    </p>
+                    <div class="alert alert-success">
+                      <strong>Próximas funcionalidades:</strong>
+                      <ul class="list-unstyled mb-0 mt-2">
+                        <li>• Editar información personal</li>
+                        <li>• Cambiar contraseña</li>
+                        <li>• Configurar preferencias</li>
+                        <li>• Gestionar sesiones activas</li>
+                        <li>• Historial de actividad</li>
+                      </ul>
+                    </div>
+                    <div class="mt-4">
+                      <span class="text-muted" id="user-info">
+                        <small>Usuario actual cargado desde localStorage</small>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+// Mostrar información básica del usuario logueado
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    const userString = localStorage.getItem('user');
+    if (userString) {
+      const user = JSON.parse(userString);
+      const userInfoElement = document.getElementById('user-info');
+      if (userInfoElement && user.nombre_completo) {
+        userInfoElement.innerHTML = `
+          <strong>Bienvenido, ${user.nombre_completo}</strong><br>
+          <small class="text-muted">
+            ${user.correo || ''}<br>
+            ${user.nombre_rol || user.rol || ''}
+          </small>
+        `;
+      }
+    }
+  } catch (error) {
+    console.error('Error al cargar información del usuario:', error);
+  }
+});
+</script> 

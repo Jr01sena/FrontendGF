@@ -1,0 +1,80 @@
+<main class="main-content position-relative max-height-vh-100 h-100 border-radius-lg ">
+  <div class="container-fluid py-2">
+    <div class="row">
+      <div class="col-12">
+        <div class="card my-4">
+          <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+            <div class="bg-gradient-dark shadow-dark border-radius-lg pt-4 pb-3">
+              <h6 class="text-white text-capitalize ps-3">Usuarios</h6>
+            </div>
+          </div>
+          <div class="card-body px-0 pb-2">
+            <div class="table-responsive p-0">
+              <table class="table align-items-center mb-0">
+                <thead>
+                  <tr>
+                    <th scope="col" class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Nombre /
+                      identificación</th>
+                    <th scope="col" class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+                      Correo</th>
+                    <th scope="col"
+                      class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7"> Teléfono
+                    </th>
+                    <th scope="col"
+                      class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7"> Estado
+                    </th>
+                    <th scope="col"
+                      class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7"> Rol</th>
+                    <th scope="col"
+                      class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7"> Acciones
+                    </th>
+                  </tr>
+                </thead>
+                <tbody id="users-table-body">
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="modal fade" id="edit-user-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Editar Usuario</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="edit-user-form">
+          <input type="hidden" id="edit-user-id">
+
+          <div class="mb-3">
+            <label for="edit-nombre_completo" class="form-label">Nombre Completo</label>
+            <input type="text" class="form-control" id="edit-nombre_completo">
+          </div>
+          <div class="mb-3">
+            <label for="edit-correo" class="form-label">Correo</label>
+            <input type="email" class="form-control" id="edit-correo">
+          </div>
+          <div class="mb-3">
+            <label for="edit-telefono" class="form-label">Teléfono</label>
+            <input type="text" class="form-control" id="edit-telefono">
+          </div>
+          <div class="mb-3">
+            <label for="edit-tipo_contrato" class="form-label">Tipo de Contrato</label>
+            <input type="text" class="form-control" id="edit-tipo_contrato">
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-success">Guardar Cambios</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

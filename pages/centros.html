@@ -1,0 +1,162 @@
+<main class="main-content position-relative max-height-vh-100 h-100 border-radius-lg ">
+  <div class="container-fluid py-2">
+    <div class="row">
+      <div class="col-12">
+        <div class="card my-4">
+          <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+            <div class="bg-gradient-success shadow-success border-radius-lg pt-4 pb-3">
+              <div class="d-flex justify-content-between align-items-center px-3">
+                <h6 class="text-white text-capitalize mb-0">Centros de Formación</h6>
+                                  <button type="button" class="btn btn-success btn-sm" id="btn-create-centro" data-bs-toggle="modal" data-bs-target="#create-centro-modal">
+                   Crear Centro
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="card-body px-0 pb-2">
+            <!-- Indicador de carga -->
+            <div id="loading-spinner" class="text-center py-5">
+              <div class="spinner-border text-success" role="status">
+                <span class="visually-hidden">Cargando...</span>
+              </div>
+              <p class="mt-2 text-muted">Cargando centros de formación...</p>
+            </div>
+
+            <!-- Mensaje de error -->
+            <div id="error-message" class="alert alert-danger mx-3" style="display: none;">
+              <span class="text-white font-weight-bold" id="error-text"></span>
+            </div>
+
+            <!-- Tabla de centros -->
+            <div id="centros-table-container" class="table-responsive p-0" style="display: none;">
+              <table class="table align-items-center mb-0">
+                <thead>
+                  <tr>
+                    <th scope="col" class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Código Centro</th>
+                    <th scope="col" class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+                      Nombre del Centro</th>
+                    <th scope="col"
+                      class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Código Regional
+                    </th>
+                    <th scope="col"
+                      class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Acciones
+                    </th>
+                  </tr>
+                </thead>
+                <tbody id="centros-table-body">
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Mensaje cuando no hay datos -->
+            <div id="no-data-message" class="text-center py-5" style="display: none;">
+              <p class="text-muted mt-2">No se encontraron centros de formación</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Modal para crear centro -->
+<div class="modal fade" id="create-centro-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Crear Centro de Formación</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="create-centro-form">
+        <div class="modal-body">
+          <!-- Código del Centro -->
+          <div class="mb-3">
+            <label for="cod_centro" class="form-label text-dark fw-bold">Código del Centro</label>
+            <input type="number" class="form-control border px-3" id="cod_centro" name="cod_centro" 
+                   placeholder="Ej: 9333" required min="1000" max="99999">
+            <small class="text-muted">Debe estar entre 1000 y 99999</small>
+          </div>
+          
+          <!-- Nombre del Centro -->
+          <div class="mb-3">
+            <label for="nombre_centro" class="form-label text-dark fw-bold">Nombre del Centro</label>
+            <input type="text" class="form-control border px-3" id="nombre_centro" name="nombre_centro" 
+                   placeholder="Ej: Centro de Innovación Tecnológica" required maxlength="80">
+            <small class="text-muted">Máximo 80 caracteres</small>
+          </div>
+          
+          <!-- Código Regional -->
+          <div class="mb-3">
+            <label for="cod_regional" class="form-label text-dark fw-bold">Código Regional</label>
+            <input type="number" class="form-control border px-3" id="cod_regional" name="cod_regional" 
+                   placeholder="Ej: 66" required min="1" max="999">
+            <small class="text-muted">Código de la regional a la que pertenece</small>
+          </div>
+
+          <!-- Mensaje de error en el modal -->
+          <div id="modal-error-message" class="alert alert-danger" style="display: none;">
+            <span id="modal-error-text"></span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success" id="btn-submit-centro">
+            <span id="submit-text">Crear Centro</span>
+            <span id="submit-loading" class="spinner-border spinner-border-sm ms-2" style="display: none;"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para editar centro -->
+<div class="modal fade" id="edit-centro-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Editar Centro de Formación</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="edit-centro-form">
+        <div class="modal-body">
+          <!-- Código del Centro (solo lectura) -->
+          <div class="mb-3">
+            <label for="edit_cod_centro" class="form-label text-dark fw-bold">Código del Centro</label>
+            <input type="number" class="form-control border px-3 bg-light" id="edit_cod_centro" name="cod_centro" 
+                   readonly>
+            <small class="text-muted">El código del centro no se puede modificar</small>
+          </div>
+          
+          <!-- Nombre del Centro -->
+          <div class="mb-3">
+            <label for="edit_nombre_centro" class="form-label text-dark fw-bold">Nombre del Centro</label>
+            <input type="text" class="form-control border px-3" id="edit_nombre_centro" name="nombre_centro" 
+                   placeholder="Ej: Centro de Innovación Tecnológica" required maxlength="80">
+            <small class="text-muted">Máximo 80 caracteres</small>
+          </div>
+          
+          <!-- Código Regional -->
+          <div class="mb-3">
+            <label for="edit_cod_regional" class="form-label text-dark fw-bold">Código Regional</label>
+            <input type="number" class="form-control border px-3" id="edit_cod_regional" name="cod_regional" 
+                   placeholder="Ej: 66" required min="1" max="999">
+            <small class="text-muted">Código de la regional a la que pertenece</small>
+          </div>
+
+          <!-- Mensaje de error en el modal -->
+          <div id="edit-modal-error-message" class="alert alert-danger" style="display: none;">
+            <span id="edit-modal-error-text"></span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success" id="btn-submit-edit-centro">
+            <span id="edit-submit-text">Actualizar Centro</span>
+            <span id="edit-submit-loading" class="spinner-border spinner-border-sm ms-2" style="display: none;"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div> 

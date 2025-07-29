@@ -1,0 +1,308 @@
+<main class="main-content position-relative max-height-vh-100 h-100 border-radius-lg ">
+  <div class="container-fluid py-2">
+    <div class="row">
+      <div class="col-12">
+        <div class="card my-4">
+          <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+            <div class="bg-gradient-success shadow-success border-radius-lg pt-4 pb-3">
+              <div class="d-flex justify-content-between align-items-center px-3">
+                <h6 class="text-white text-capitalize mb-0">Metas del Centro</h6>
+                <div class="d-flex align-items-center">
+                  <!-- Filtro por año -->
+                  <div class="me-3">
+                    <select class="form-select form-select-sm text-white bg-transparent border-white" 
+                            id="year-filter" style="min-width: 120px;">
+                      <option value="">Todos los años</option>
+                    </select>
+                  </div>
+                  <button type="button" class="btn btn-success btn-sm me-2" id="btn-create-meta" data-bs-toggle="modal" data-bs-target="#create-meta-modal">
+                    <i class="fas fa-plus"></i> Crear Meta
+                  </button>
+                  
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card-body px-0 pb-2">
+            <!-- Indicador de carga -->
+            <div id="loading-spinner" class="text-center py-5">
+              <div class="spinner-border text-success" role="status">
+                <span class="visually-hidden">Cargando...</span>
+              </div>
+              <p class="mt-2 text-muted">Cargando metas del centro...</p>
+            </div>
+
+            <!-- Mensaje de error -->
+            <div id="error-message" class="alert alert-danger mx-3" style="display: none;">
+              <span class="text-white font-weight-bold" id="error-text"></span>
+            </div>
+
+            <!-- Información del centro -->
+            <div id="centro-info" class="mx-3 mb-3" style="display: none;">
+              <div class="alert alert-success text-white mb-3">
+                <div class="d-flex align-items-center">
+                  <i class="fas fa-building me-2"></i>
+                  <span>
+                    <strong>Centro:</strong> <span id="centro-nombre"></span> 
+                    (<strong>Código:</strong> <span id="centro-codigo"></span>)
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tabla de metas -->
+            <div id="metas-table-container" class="table-responsive p-0" style="display: none;">
+              <table class="table align-items-center mb-0">
+                <thead>
+                  <tr>
+                    <th scope="col" class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                      Año
+                    </th>
+                    <th scope="col" class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">
+                      Concepto
+                    </th>
+                    <th scope="col" class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                      Valor Meta
+                    </th>
+                                         <th scope="col" class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                       ID Meta
+                     </th>
+                     <th scope="col" class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
+                       Acciones
+                     </th>
+                  </tr>
+                </thead>
+                <tbody id="metas-table-body">
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Mensaje cuando no hay datos -->
+            <div id="no-data-message" class="text-center py-5" style="display: none;">
+              <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+              <p class="text-muted mt-2">No se encontraron metas para el centro</p>
+              <small class="text-muted">Intenta seleccionar un año diferente o verifica que existan metas configuradas</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resumen estadístico -->
+    <div class="row" id="stats-container" style="display: none;">
+      <div class="col-xl-6 col-sm-6 mb-xl-0 mb-4">
+        <div class="card">
+          <div class="card-header p-2 ps-3">
+            <div class="d-flex justify-content-between">
+              <div>
+                <p class="text-sm mb-0 text-capitalize">Total Metas</p>
+                <h4 class="mb-0" id="total-metas">0</h4>
+              </div>
+              <div class="icon icon-md icon-shape bg-gradient-success shadow-success text-center border-radius-lg">
+                <i class="material-symbols-rounded opacity-10">trending_up</i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-xl-6 col-sm-6 mb-xl-0 mb-4">
+        <div class="card">
+          <div class="card-header p-2 ps-3">
+            <div class="d-flex justify-content-between">
+              <div>
+                <p class="text-sm mb-0 text-capitalize">Valor Total</p>
+                <h4 class="mb-0" id="total-value">0</h4>
+              </div>
+              <div class="icon icon-md icon-shape bg-gradient-success shadow-success text-center border-radius-lg">
+                <i class="material-symbols-rounded opacity-10">calculate</i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Modal para crear meta -->
+<div class="modal fade" id="create-meta-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Crear Nueva Meta</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="create-meta-form">
+        <div class="modal-body">
+          <!-- Año de la Meta -->
+          <div class="mb-3">
+            <label for="anio_meta" class="form-label text-dark fw-bold">Año</label>
+            <input type="number" class="form-control border px-3" id="anio_meta" name="anio" 
+                   placeholder="Ej: 2025" required min="2000" max="2100">
+            <small class="text-muted">Año para el cual se establece la meta (2000-2100)</small>
+          </div>
+          
+          <!-- Concepto de la Meta -->
+          <div class="mb-3">
+            <label for="concepto_meta" class="form-label text-dark fw-bold">Concepto</label>
+            <input type="text" class="form-control border px-3" id="concepto_meta" name="concepto" 
+                   placeholder="Ej: graduados, en practicas, certificados" required maxlength="50">
+            <small class="text-muted">Descripción del concepto de la meta (máximo 50 caracteres)</small>
+          </div>
+          
+          <!-- Valor de la Meta -->
+          <div class="mb-3">
+            <label for="valor_meta" class="form-label text-dark fw-bold">Valor Meta</label>
+            <input type="number" class="form-control border px-3" id="valor_meta" name="valor" 
+                   placeholder="Ej: 150" required min="1" max="999999">
+            <small class="text-muted">Valor numérico de la meta a alcanzar</small>
+          </div>
+
+          <!-- Información del Centro (solo lectura) -->
+          <div class="mb-3">
+            <label class="form-label text-dark fw-bold">Centro de Formación</label>
+            <div class="alert alert-success text-white mb-0">
+              <div class="d-flex align-items-center">
+                <i class="fas fa-building me-2"></i>
+                <span>
+                  <strong id="modal-centro-nombre">Cargando...</strong> 
+                  (Código: <span id="modal-centro-codigo">...</span>)
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mensaje de error en el modal -->
+          <div id="modal-error-message" class="alert alert-danger" style="display: none;">
+            <span id="modal-error-text"></span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success" id="btn-submit-meta">
+            <span id="submit-text">Crear Meta</span>
+            <span id="submit-loading" class="spinner-border spinner-border-sm ms-2" style="display: none;"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para editar meta -->
+<div class="modal fade" id="edit-meta-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Editar Meta</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="edit-meta-form">
+        <div class="modal-body">
+          <!-- ID de la Meta (solo lectura) -->
+          <div class="mb-3">
+            <label for="edit_id_meta" class="form-label text-dark fw-bold">ID Meta</label>
+            <input type="number" class="form-control border px-3 bg-light" id="edit_id_meta" name="id_meta" 
+                   readonly>
+            <small class="text-muted">El ID de la meta no se puede modificar</small>
+          </div>
+
+          <!-- Año de la Meta -->
+          <div class="mb-3">
+            <label for="edit_anio_meta" class="form-label text-dark fw-bold">Año</label>
+            <input type="number" class="form-control border px-3" id="edit_anio_meta" name="anio" 
+                   placeholder="Ej: 2025" required min="2000" max="2100">
+            <small class="text-muted">Año para el cual se establece la meta (2000-2100)</small>
+          </div>
+          
+          <!-- Concepto de la Meta -->
+          <div class="mb-3">
+            <label for="edit_concepto_meta" class="form-label text-dark fw-bold">Concepto</label>
+            <input type="text" class="form-control border px-3" id="edit_concepto_meta" name="concepto" 
+                   placeholder="Ej: graduados, en practicas, certificados" required maxlength="50">
+            <small class="text-muted">Descripción del concepto de la meta (máximo 50 caracteres)</small>
+          </div>
+          
+          <!-- Valor de la Meta -->
+          <div class="mb-3">
+            <label for="edit_valor_meta" class="form-label text-dark fw-bold">Valor Meta</label>
+            <input type="number" class="form-control border px-3" id="edit_valor_meta" name="valor" 
+                   placeholder="Ej: 150" required min="1" max="999999">
+            <small class="text-muted">Valor numérico de la meta a alcanzar</small>
+          </div>
+
+          <!-- Información del Centro (solo lectura) -->
+          <div class="mb-3">
+            <label class="form-label text-dark fw-bold">Centro de Formación</label>
+            <div class="alert alert-success text-white mb-0">
+              <div class="d-flex align-items-center">
+                <i class="fas fa-building me-2"></i>
+                <span>
+                  <strong id="edit-modal-centro-nombre">Cargando...</strong> 
+                  (Código: <span id="edit-modal-centro-codigo">...</span>)
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mensaje de error en el modal -->
+          <div id="edit-modal-error-message" class="alert alert-danger" style="display: none;">
+            <span id="edit-modal-error-text"></span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success" id="btn-submit-edit-meta">
+            <span id="edit-submit-text">Actualizar Meta</span>
+            <span id="edit-submit-loading" class="spinner-border spinner-border-sm ms-2" style="display: none;"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de confirmación para eliminar meta -->
+<div class="modal fade" id="delete-meta-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header alert alert-success text-white mb-0 pb-2 pt-2 align-items-center">
+        <h5 class="modal-title">
+          <i class="fas fa-exclamation-triangle text-danger me-2"></i>Confirmar Eliminación
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body alert alert text-white mb-0 pt-3 pb-2">
+        <div class="text-center">
+          <i class="fas fa-trash-alt fa-3x text-danger mb-3"></i>
+          <h5 class="text-dark">¿Estás seguro de que deseas eliminar esta meta?</h5>
+          <p class="text-dark">
+            <strong>Concepto:</strong> <span id="delete-meta-concepto"></span><br>
+            <strong>Año:</strong> <span id="delete-meta-anio"></span><br>
+            <strong>ID:</strong> <span id="delete-meta-id"></span>
+          </p>
+          <div class="alert alert-success mt-3">
+            <i class="fas fa-exclamation-triangle text-danger me-2"></i>
+            <strong>¡Atención!</strong> Esta acción no se puede deshacer.
+          </div>
+        </div>
+
+        <!-- Mensaje de error en el modal de eliminación -->
+        <div id="delete-modal-error-message" class="alert alert-danger" style="display: none;">
+          <span id="delete-modal-error-text"></span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="fas fa-times me-1"></i>Cancelar
+        </button>
+        <button type="button" class="btn btn-danger" id="btn-confirm-delete-meta">
+          <span id="delete-submit-text">
+            <i class="fas fa-trash me-1"></i>Sí, Eliminar
+          </span>
+          <span id="delete-submit-loading" class="spinner-border spinner-border-sm ms-2" style="display: none;"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div> 

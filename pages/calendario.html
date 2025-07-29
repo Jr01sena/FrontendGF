@@ -1,0 +1,434 @@
+<!-- Módulo de Calendario - Programación de Clases -->
+<div class="container-fluid py-4">
+  <!-- Header del Calendario -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header" style="background: linear-gradient(195deg, #66BB6A 0%, #43A047 100%); color: white;">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h4 class="mb-0">
+                <i class="material-symbols-rounded me-2">calendar_month</i>
+                Calendario de Programación
+              </h4>
+              <small class="opacity-75" id="calendar-subtitle">Gestiona tu programación académica</small>
+            </div>
+            <!-- Selector de Instructor (Solo para Coordinadores) -->
+            <div id="instructor-selector-container" class="d-none">
+              <div class="input-group" style="width: 300px;">
+                <span class="input-group-text bg-white border-end-0">
+                  <i class="material-symbols-rounded text-success">person</i>
+                </span>
+                <select id="instructor-selector" class="form-select border-start-0">
+                  <option value="">Seleccionar Instructor...</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controles de Navegación del Calendario -->
+  <div class="row mt-3">
+    <div class="col-12">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body py-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <!-- Navegación de Mes -->
+            <div class="d-flex align-items-center">
+              <button id="prev-month" class="btn btn-outline-success btn-sm me-3">
+                <i class="material-symbols-rounded">chevron_left</i>
+              </button>
+              <div class="d-flex align-items-center">
+                <select id="month-selector" class="form-select form-select-sm me-2" style="width: auto;">
+                  <option value="0">Enero</option>
+                  <option value="1">Febrero</option>
+                  <option value="2">Marzo</option>
+                  <option value="3">Abril</option>
+                  <option value="4">Mayo</option>
+                  <option value="5">Junio</option>
+                  <option value="6">Julio</option>
+                  <option value="7">Agosto</option>
+                  <option value="8">Septiembre</option>
+                  <option value="9">Octubre</option>
+                  <option value="10">Noviembre</option>
+                  <option value="11">Diciembre</option>
+                </select>
+                <select id="year-selector" class="form-select form-select-sm" style="width: auto;">
+                  <!-- Se llena dinámicamente -->
+                </select>
+              </div>
+              <button id="next-month" class="btn btn-outline-success btn-sm ms-3">
+                <i class="material-symbols-rounded">chevron_right</i>
+              </button>
+            </div>
+
+            <!-- Botón Agregar Programación -->
+            <button id="add-programacion-btn" class="btn btn-success btn-sm d-none">
+              <i class="material-symbols-rounded me-1">add</i>
+              Agregar Programación
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Área de Contenido Principal -->
+  <div class="row mt-3">
+    <div class="col-12">
+      <!-- Mensaje para Coordinadores sin Instructor Seleccionado -->
+      <div id="select-instructor-message" class="card border-0 shadow-sm d-none">
+        <div class="card-body text-center py-5">
+          <div class="mb-3">
+            <i class="material-symbols-rounded text-success" style="font-size: 4rem;">person_search</i>
+          </div>
+          <h5 class="text-muted mb-2">Selecciona un Instructor</h5>
+          <p class="text-muted">Para ver el calendario de programación, selecciona un instructor del menú superior.</p>
+        </div>
+      </div>
+
+      <!-- Loading del Calendario -->
+      <div id="calendar-loading" class="card border-0 shadow-sm d-none">
+        <div class="card-body text-center py-5">
+          <div class="spinner-border text-success mb-3" role="status">
+            <span class="visually-hidden">Cargando...</span>
+          </div>
+          <p class="text-muted mb-0">Cargando calendario...</p>
+        </div>
+      </div>
+
+      <!-- Error del Calendario -->
+      <div id="calendar-error" class="card border-0 shadow-sm d-none">
+        <div class="card-body text-center py-5">
+          <div class="mb-3">
+            <i class="material-symbols-rounded text-danger" style="font-size: 4rem;">error</i>
+          </div>
+          <h5 class="text-danger mb-2">Error al Cargar Calendario</h5>
+          <p class="text-muted mb-3" id="calendar-error-message">No se pudo cargar la programación.</p>
+          <button id="retry-calendar" class="btn btn-success">
+            <i class="material-symbols-rounded me-1">refresh</i>
+            Reintentar
+          </button>
+        </div>
+      </div>
+
+      <!-- Calendario Principal -->
+      <div id="calendar-container" class="card border-0 shadow-sm d-none">
+        <div class="card-body p-0">
+          <!-- Header del Mes -->
+          <div class="bg-light p-3 border-bottom">
+            <h5 class="mb-0 text-center" id="calendar-month-year">Enero 2025</h5>
+          </div>
+          
+          <!-- Grid del Calendario -->
+          <div class="calendar-grid">
+            <!-- Header de días de la semana -->
+            <div class="calendar-header">
+              <div class="calendar-day-header">Dom</div>
+              <div class="calendar-day-header">Lun</div>
+              <div class="calendar-day-header">Mar</div>
+              <div class="calendar-day-header">Mié</div>
+              <div class="calendar-day-header">Jue</div>
+              <div class="calendar-day-header">Vie</div>
+              <div class="calendar-day-header">Sáb</div>
+            </div>
+            
+            <!-- Días del calendario -->
+            <div id="calendar-days" class="calendar-days">
+              <!-- Se llena dinámicamente -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para Ver/Editar Programación -->
+<div class="modal fade" id="programacion-modal" tabindex="-1" aria-labelledby="programacion-modal-label" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header" style="background: linear-gradient(195deg, #66BB6A 0%, #43A047 100%); color: white;">
+        <h5 class="modal-title" id="programacion-modal-label">
+          <i class="material-symbols-rounded me-2">event_note</i>
+          Detalles de Programación
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Error del modal -->
+        <div id="modal-error" class="alert alert-danger d-none">
+          <i class="material-symbols-rounded me-2">error</i>
+          <span id="modal-error-text">Error al cargar los datos</span>
+        </div>
+
+        <!-- Loading del modal -->
+        <div id="modal-loading" class="text-center py-4">
+          <div class="spinner-border text-success mb-3" role="status">
+            <span class="visually-hidden">Cargando...</span>
+          </div>
+          <p class="text-muted mb-0">Cargando detalles...</p>
+        </div>
+
+        <!-- Contenido del modal -->
+        <div id="modal-content" class="d-none">
+          <form id="programacion-form">
+            <div class="row">
+              <!-- Información de la Ficha -->
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Número de Ficha</label>
+                <input type="text" id="modal-cod-ficha" class="form-control" readonly>
+              </div>
+
+              <!-- Fecha -->
+              <div class="col-md-6 mb-3">
+                <label for="modal-fecha" class="form-label fw-bold">Fecha</label>
+                <input type="date" id="modal-fecha" class="form-control" readonly>
+              </div>
+
+              <!-- Horas -->
+              <div class="col-md-4 mb-3">
+                <label for="modal-horas" class="form-label fw-bold">Horas Programadas</label>
+                <input type="number" id="modal-horas" class="form-control" min="1" max="8" readonly>
+              </div>
+
+              <!-- Hora Inicio -->
+              <div class="col-md-4 mb-3">
+                <label for="modal-hora-inicio" class="form-label fw-bold">Hora Inicio</label>
+                <input type="time" id="modal-hora-inicio" class="form-control" readonly>
+              </div>
+
+              <!-- Hora Fin -->
+              <div class="col-md-4 mb-3">
+                <label for="modal-hora-fin" class="form-label fw-bold">Hora Fin</label>
+                <input type="time" id="modal-hora-fin" class="form-control" readonly>
+              </div>
+
+              <!-- Competencia -->
+              <div class="col-12 mb-3">
+                <label for="modal-competencia" class="form-label fw-bold">Competencia</label>
+                <textarea id="modal-competencia" class="form-control" rows="2" readonly></textarea>
+              </div>
+
+              <!-- Resultado de Aprendizaje -->
+              <div class="col-12 mb-3">
+                <label for="modal-resultado" class="form-label fw-bold">Resultado de Aprendizaje</label>
+                <textarea id="modal-resultado" class="form-control" rows="3" readonly></textarea>
+              </div>
+
+              <!-- Instructor (solo visible para coordinadores) -->
+              <div class="col-12 mb-3" id="modal-instructor-container">
+                <label class="form-label fw-bold">Instructor</label>
+                <input type="text" id="modal-instructor" class="form-control" readonly>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        <button type="button" id="edit-programacion-btn" class="btn btn-warning d-none">
+          <i class="material-symbols-rounded me-1">edit</i>
+          Editar
+        </button>
+        <button type="button" id="save-programacion-btn" class="btn btn-success d-none">
+          <i class="material-symbols-rounded me-1">save</i>
+          <span id="save-programacion-text">Guardar Cambios</span>
+        </button>
+        <button type="button" id="cancel-edit-btn" class="btn btn-outline-secondary d-none">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para Nueva Programación -->
+<div class="modal fade" id="nueva-programacion-modal" tabindex="-1" aria-labelledby="nueva-programacion-modal-label" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header" style="background: linear-gradient(195deg, #66BB6A 0%, #43A047 100%); color: white;">
+        <h5 class="modal-title" id="nueva-programacion-modal-label">
+          <i class="material-symbols-rounded me-2">add_circle</i>
+          Nueva Programación
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Error del modal nueva programación -->
+        <div id="nueva-modal-error" class="alert alert-danger d-none">
+          <i class="material-symbols-rounded me-2">error</i>
+          <span id="nueva-modal-error-text">Error al crear la programación</span>
+        </div>
+
+        <!-- Formulario nueva programación -->
+        <form id="nueva-programacion-form">
+          <div class="row">
+            <!-- Fecha -->
+            <div class="col-md-6 mb-3">
+              <label for="nueva-fecha" class="form-label fw-bold">Fecha <span class="text-danger">*</span></label>
+              <input type="date" id="nueva-fecha" class="form-control" required>
+            </div>
+
+            <!-- Ficha -->
+            <div class="col-md-6 mb-3">
+              <label for="nueva-ficha" class="form-label fw-bold">Ficha <span class="text-danger">*</span></label>
+              <select id="nueva-ficha" class="form-select" required>
+                <option value="">Seleccionar ficha...</option>
+              </select>
+            </div>
+
+            <!-- Competencia -->
+            <div class="col-12 mb-3">
+              <label for="nueva-competencia" class="form-label fw-bold">Competencia <span class="text-danger">*</span></label>
+              <select id="nueva-competencia" class="form-select" required>
+                <option value="">Seleccionar competencia...</option>
+              </select>
+            </div>
+
+            <!-- Resultado -->
+            <div class="col-12 mb-3">
+              <label for="nueva-resultado" class="form-label fw-bold">Resultado de Aprendizaje <span class="text-danger">*</span></label>
+              <select id="nueva-resultado" class="form-select" required>
+                <option value="">Seleccionar resultado...</option>
+              </select>
+            </div>
+
+            <!-- Horas -->
+            <div class="col-md-4 mb-3">
+              <label for="nueva-horas" class="form-label fw-bold">Horas <span class="text-danger">*</span></label>
+              <input type="number" id="nueva-horas" class="form-control" min="1" max="8" required>
+            </div>
+
+            <!-- Hora Inicio -->
+            <div class="col-md-4 mb-3">
+              <label for="nueva-hora-inicio" class="form-label fw-bold">Hora Inicio <span class="text-danger">*</span></label>
+              <input type="time" id="nueva-hora-inicio" class="form-control" required>
+            </div>
+
+            <!-- Hora Fin -->
+            <div class="col-md-4 mb-3">
+              <label for="nueva-hora-fin" class="form-label fw-bold">Hora Fin <span class="text-danger">*</span></label>
+              <input type="time" id="nueva-hora-fin" class="form-control" required>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" id="guardar-nueva-programacion" class="btn btn-success">
+          <i class="material-symbols-rounded me-1">save</i>
+          <span id="guardar-nueva-text">Crear Programación</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Estilos CSS del Calendario -->
+<style>
+.calendar-grid {
+  display: flex;
+  flex-direction: column;
+}
+
+.calendar-header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.calendar-day-header {
+  padding: 12px 8px;
+  text-align: center;
+  font-weight: 600;
+  color: #495057;
+  border-right: 1px solid #dee2e6;
+}
+
+.calendar-day-header:last-child {
+  border-right: none;
+}
+
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  min-height: 400px;
+}
+
+.calendar-day {
+  min-height: 120px;
+  border-right: 1px solid #dee2e6;
+  border-bottom: 1px solid #dee2e6;
+  padding: 8px;
+  position: relative;
+  background: white;
+}
+
+.calendar-day:last-child {
+  border-right: none;
+}
+
+.calendar-day.other-month {
+  background-color: #f8f9fa;
+  color: #6c757d;
+}
+
+.calendar-day.today {
+  background-color: #e8f5e8;
+}
+
+.day-number {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.programacion-event {
+  background: linear-gradient(195deg, #66BB6A 0%, #43A047 100%);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 6px;
+  margin-bottom: 2px;
+  font-size: 11px;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.programacion-event:hover {
+  background: linear-gradient(195deg, #4CAF50 0%, #388E3C 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+.programacion-event .ficha-number {
+  font-weight: 600;
+  display: block;
+}
+
+.programacion-event .horas {
+  font-size: 10px;
+  opacity: 0.9;
+}
+
+@media (max-width: 768px) {
+  .calendar-day {
+    min-height: 100px;
+    padding: 4px;
+  }
+  
+  .programacion-event {
+    font-size: 10px;
+    padding: 2px 4px;
+  }
+  
+  .day-number {
+    font-size: 12px;
+  }
+}
+</style> 

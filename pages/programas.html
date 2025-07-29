@@ -1,0 +1,86 @@
+
+<main class="main-content position-relative max-height-vh-100 h-100 border-radius-lg">
+  <!-- Contenedor para alertas flotantes -->
+  <div id="alert-container" class="alert-container position-fixed top-0 end-0 p-3" style="z-index: 1100;"></div>
+  <div class="container-fluid py-2">
+    <div class="row">
+      <div class="col-12">
+        <div class="card my-4">
+          <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+            <div class="bg-gradient-dark shadow-dark border-radius-lg pt-4 pb-3">
+              <h6 class="text-white text-capitalize ps-3">Programas de Formación</h6>
+            </div>
+          </div>
+          <!-- Agrega esto en la parte superior de la vista donde esté la tabla de programas -->
+          <!-- Asegúrate de tener Bootstrap y Bootstrap Icons cargados en tu HTML -->
+
+          <!-- Buscador con ícono alineado a la derecha -->
+          <!-- Bloque contenedor con margen inferior -->
+            <div class="d-flex justify-content-end mb-4 m-3">
+                <!-- Grupo del buscador con ícono -->
+                <div class="input-group" style="max-width: 320px;">
+                    <span class="input-group-text bg-white border-end-0">
+                    <i class="bi bi-search text-muted"></i>
+                    </span>
+                    <input
+                    type="text"
+                    id="busqueda-programa"
+                    class="form-control border-start-0 shadow-sm"
+                    placeholder="Buscar programa por nombre"
+                    />
+                </div>
+            </div>
+
+          <div class="card-body px-0 pb-2">
+            <div class="table-responsive p-0">
+              <table class="table align-items-center mb-0">
+                <thead>
+                  <tr>
+                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Nombre Programa</th>
+                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Código</th>
+                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Versión</th>
+                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Horas Lectivas</th>
+                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Horas Productivas</th>
+                    <th class="text-end text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="programas-table-body">
+                  <!-- JS renderiza aquí -->
+                </tbody>
+              </table>
+              <div class="d-flex justify-content-center align-items-center mt-3">
+                    <div id="paginador" class="mx-2"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Modal edición de programa -->
+  <div class="modal fade" id="edit-programa-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <form id="edit-programa-form" class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Editar Horas del Programa</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="edit-horas-lectivas" class="form-label">Horas Lectivas</label>
+            <input type="number" class="form-control" id="edit-horas-lectivas" min="1" required>
+          </div>
+          <div class="mb-3">
+            <label for="edit-horas-productivas" class="form-label">Horas Productivas</label>
+            <input type="number" class="form-control" id="edit-horas-productivas" min="1" required>
+          </div>
+          <input type="hidden" id="edit-id-programa">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</main>

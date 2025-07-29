@@ -1,0 +1,67 @@
+<main class="main-content position-relative max-height-vh-100 h-100 border-radius-lg">
+  <div class="container-fluid py-2">
+    <div class="row">
+      <div class="col-12">
+        <div class="card my-4">
+          <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+            <div class="bg-gradient-dark shadow-dark border-radius-lg pt-4 pb-3 d-flex justify-content-between align-items-center px-3">
+              <h6 class="text-white text-capitalize mb-0" id="titulo-programa">Competencias del programa</h6>
+              <button class="btn btn-light btn-sm" id="btn-volver">
+                <i class="bi bi-arrow-left"></i> Volver
+              </button>
+            </div>
+          </div>
+          <div class="card-body px-0 pb-2">
+            <div class="table-responsive p-3">
+              <table class="table align-items-center mb-0">
+                <thead>
+                  <tr>
+                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Código Competencia</th>
+                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Nombre Competencia</th>
+                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Horas</th>
+                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-end">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="competencias-table-body">
+                  <!-- Render dinámico desde JS -->
+                </tbody>
+              </table>
+              <div class="d-flex justify-content-center align-items-center mt-3">
+                    <div id="paginador" class="mx-2"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Modal para mostrar resultados -->
+  <div class="modal fade" id="resultadosModal" tabindex="-1" aria-labelledby="resultadosModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="resultadosModalLabel">Resultados de Aprendizaje</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <table class="table table-bordered table-hover">
+            <thead class="table-light">
+              <tr>
+                <th style="width: 150px;">Código</th>
+                <th>Nombre Resultado</th>
+              </tr>
+            </thead>
+            <tbody id="tablaResultadosBody">
+              <!-- Se inyectarán los resultados aquí -->
+            </tbody>
+          </table>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+</main>
