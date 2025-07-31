@@ -17,11 +17,11 @@ const pageNames = {
   usuarios: 'Usuarios',
   centros: 'Centros de Formación',
   ambientes: 'Ambientes de Formación',
+  cargararchivos: 'Cargar Archivos',
   programas: 'Programa Formación',
   grupos: 'Grupos de Formación',
   calendario: 'Calendario',
   metas: 'Metas',
-  cargararchivos: 'Cargar Archivos',
   billing: 'Billing',
   notifications: 'Notifications',
   profile: 'Perfil',
@@ -219,3 +219,4 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 window.loadContent = loadContent;
+

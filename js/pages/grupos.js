@@ -503,24 +503,37 @@ async function handleEditGrupo() {
     alert('No hay ficha seleccionada');
     return;
   }
-  
+
   try {
-    // Cargar datos actuales del grupo
+    await loadDropdownOptions();
     const grupos = await gruposService.getGruposByCodFicha(currentCodFicha);
     const grupo = grupos[0];
-    
+
+    // Resetear el formulario antes de poblar los campos
+    resetEditGrupoForm();
+
     if (grupo) {
-      // Poblar formulario
+      console.log('Datos del grupo:', grupo);
+
       document.getElementById('modal-cod-ficha').textContent = currentCodFicha;
-      document.getElementById('hora_inicio').value = grupo.hora_inicio || '';
-      document.getElementById('hora_fin').value = grupo.hora_fin || '';
-      document.getElementById('id_ambiente').value = grupo.id_ambiente || '';
+
+      // Asignar horas con formato correcto, vacío si es "00:00:00" o "00:00"
+      const horaInicio = (grupo.hora_inicio === '00:00:00' || grupo.hora_inicio === '00:00') ? '' : (grupo.hora_inicio ? grupo.hora_inicio.substring(0,5) : '');
+      const horaFin = (grupo.hora_fin === '00:00:00' || grupo.hora_fin === '00:00') ? '' : (grupo.hora_fin ? grupo.hora_fin.substring(0,5) : '');
+
+      document.getElementById('hora_inicio').value = horaInicio;
+      document.getElementById('hora_fin').value = horaFin;
+
+      // Asignar ambiente como string
+      const ambienteSelect = document.getElementById('id_ambiente');
+      console.log('Opciones de ambiente:', Array.from(ambienteSelect.options).map(o => o.value));
+      ambienteSelect.value = grupo.id_ambiente ? String(grupo.id_ambiente) : '';
+      console.log('Valor asignado a ambiente:', ambienteSelect.value);
     }
-    
-    // Mostrar modal
+
     const modal = new bootstrap.Modal(document.getElementById('edit-grupo-modal'));
     modal.show();
-    
+
   } catch (error) {
     alert('Error al cargar los datos del grupo');
   }
@@ -629,9 +642,10 @@ async function handleAsignarInstructorSubmit(event) {
     // Crear la asignación
     const response = await gruposService.createAsignacionInstructor(asignacionData);
     
-    // Cerrar modal
+    // Cerrar modal y eliminar backdrop si persiste
     const modal = bootstrap.Modal.getInstance(document.getElementById('asignar-instructor-modal'));
     modal.hide();
+    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
     
     // Recargar datos de instructores
     const instructoresAsignados = await gruposService.getInstructoresByFicha(currentCodFicha);
@@ -700,9 +714,10 @@ async function handleEditAsignacionSubmit(event) {
     // Actualizar la asignación
     const response = await gruposService.updateAsignacionInstructor(updateData);
     
-    // Cerrar modal
+    // Cerrar modal y eliminar backdrop si persiste
     const modal = bootstrap.Modal.getInstance(document.getElementById('edit-asignacion-modal'));
     modal.hide();
+    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
     
     // Limpiar referencia
     currentEditingAsignacion = null;
@@ -798,9 +813,6 @@ function setupEventListeners() {
   
   // Modal editar grupo
   const editGrupoModal = document.getElementById('edit-grupo-modal');
-  if (editGrupoModal) {
-    editGrupoModal.addEventListener('show.bs.modal', resetEditGrupoForm);
-  }
   
   // Botón asignar instructor
   const btnAsignarInstructor = document.getElementById('btn-asignar-instructor');

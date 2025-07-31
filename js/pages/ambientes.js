@@ -221,6 +221,73 @@ function setSubmitLoading(isLoading) {
   }
 }
 
+// async function handleCreateSubmit(event) {
+//   event.preventDefault();
+  
+//   console.log('📝 Procesando formulario de creación de ambiente...');
+  
+//   // Limpiar errores previos
+//   const errorMessage = document.getElementById('modal-error-message');
+//   errorMessage.style.display = 'none';
+  
+//   // Mostrar loading
+//   setSubmitLoading(true);
+  
+//   try {
+//     // Obtener datos del formulario
+//     const formData = new FormData(event.target);
+//     const ambienteData = {
+//       nombre_ambiente: formData.get('nombre_ambiente').trim(),
+//       num_max_aprendices: parseInt(formData.get('num_max_aprendices')),
+//       municipio: formData.get('municipio').trim(),
+//       ubicacion: formData.get('ubicacion').trim(),
+//       estado: formData.has('estado') // checkbox está marcado
+//     };
+    
+//     console.log('📊 Datos del ambiente a crear:', ambienteData);
+    
+//     // Validaciones básicas
+//     if (!ambienteData.nombre_ambiente || ambienteData.nombre_ambiente.length < 3) {
+//       throw new Error('El nombre del ambiente debe tener al menos 3 caracteres');
+//     }
+    
+//     if (!ambienteData.num_max_aprendices || ambienteData.num_max_aprendices < 1 || ambienteData.num_max_aprendices > 100) {
+//       throw new Error('La capacidad máxima debe estar entre 1 y 100 aprendices');
+//     }
+    
+//     if (!ambienteData.municipio || ambienteData.municipio.length < 3) {
+//       throw new Error('El municipio debe tener al menos 3 caracteres');
+//     }
+    
+//     if (!ambienteData.ubicacion || ambienteData.ubicacion.length < 10) {
+//       throw new Error('La ubicación debe tener al menos 10 caracteres');
+//     }
+    
+//     // Crear el ambiente
+//     const response = await ambienteService.createAmbiente(ambienteData);
+    
+//     console.log('✅ Ambiente creado exitosamente:', response);
+    
+//     // Cerrar modal
+//     const modal = bootstrap.Modal.getInstance(document.getElementById('create-ambiente-modal'));
+//     modal.hide();
+    
+//     // Mostrar mensaje de éxito
+//     console.log('🎉 ¡Ambiente creado exitosamente!');
+    
+//     // Recargar la tabla de ambientes
+//     await loadAmbientes();
+    
+//   } catch (error) {
+//     console.error('❌ Error al crear ambiente:', error);
+//     showModalError(error.message || 'Error al crear el ambiente');
+//   } finally {
+//     setSubmitLoading(false);
+//   }
+// }
+
+// --- FUNCIONES PARA CAMBIO DE ESTADO ---
+// ...existing code...
 async function handleCreateSubmit(event) {
   event.preventDefault();
   
@@ -241,7 +308,7 @@ async function handleCreateSubmit(event) {
       num_max_aprendices: parseInt(formData.get('num_max_aprendices')),
       municipio: formData.get('municipio').trim(),
       ubicacion: formData.get('ubicacion').trim(),
-      estado: formData.has('estado') // checkbox está marcado
+      estado: formData.has('estado')
     };
     
     console.log('📊 Datos del ambiente a crear:', ambienteData);
@@ -250,15 +317,12 @@ async function handleCreateSubmit(event) {
     if (!ambienteData.nombre_ambiente || ambienteData.nombre_ambiente.length < 3) {
       throw new Error('El nombre del ambiente debe tener al menos 3 caracteres');
     }
-    
     if (!ambienteData.num_max_aprendices || ambienteData.num_max_aprendices < 1 || ambienteData.num_max_aprendices > 100) {
       throw new Error('La capacidad máxima debe estar entre 1 y 100 aprendices');
     }
-    
     if (!ambienteData.municipio || ambienteData.municipio.length < 3) {
       throw new Error('El municipio debe tener al menos 3 caracteres');
     }
-    
     if (!ambienteData.ubicacion || ambienteData.ubicacion.length < 10) {
       throw new Error('La ubicación debe tener al menos 10 caracteres');
     }
@@ -268,9 +332,12 @@ async function handleCreateSubmit(event) {
     
     console.log('✅ Ambiente creado exitosamente:', response);
     
-    // Cerrar modal
-    const modal = bootstrap.Modal.getInstance(document.getElementById('create-ambiente-modal'));
+    // Cerrar modal y eliminar backdrop si persiste
+    const modalElement = document.getElementById('create-ambiente-modal');
+    let modal = bootstrap.Modal.getInstance(modalElement);
+    if (!modal) modal = new bootstrap.Modal(modalElement);
     modal.hide();
+    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
     
     // Mostrar mensaje de éxito
     console.log('🎉 ¡Ambiente creado exitosamente!');
@@ -285,8 +352,82 @@ async function handleCreateSubmit(event) {
     setSubmitLoading(false);
   }
 }
+// ...existing code...
+async function handleEditSubmit(event) {
+  event.preventDefault();
+  
+  console.log('📝 Procesando formulario de edición de ambiente...');
+  
+  if (!currentEditingAmbiente) {
+    console.error('❌ No hay ambiente seleccionado para editar');
+    showEditModalError('Error: No se encontró el ambiente a editar');
+    return;
+  }
+  
+  // Limpiar errores previos
+  const errorMessage = document.getElementById('edit-modal-error-message');
+  errorMessage.style.display = 'none';
+  
+  // Mostrar loading
+  setEditSubmitLoading(true);
+  
+  try {
+    // Obtener datos del formulario
+    const formData = new FormData(event.target);
+    const updateData = {
+      nombre_ambiente: formData.get('nombre_ambiente').trim(),
+      num_max_aprendices: parseInt(formData.get('num_max_aprendices')),
+      municipio: formData.get('municipio').trim(),
+      ubicacion: formData.get('ubicacion').trim()
+    };
+    
+    console.log('📊 Datos para actualizar:', updateData);
+    console.log('🎯 Ambiente a actualizar (ID):', currentEditingAmbiente.id_ambiente);
+    
+    // Validaciones básicas
+    if (!updateData.nombre_ambiente || updateData.nombre_ambiente.length < 3) {
+      throw new Error('El nombre del ambiente debe tener al menos 3 caracteres');
+    }
+    if (!updateData.num_max_aprendices || updateData.num_max_aprendices < 1 || updateData.num_max_aprendices > 100) {
+      throw new Error('La capacidad máxima debe estar entre 1 y 100 aprendices');
+    }
+    if (!updateData.municipio || updateData.municipio.length < 3) {
+      throw new Error('El municipio debe tener al menos 3 caracteres');
+    }
+    if (!updateData.ubicacion || updateData.ubicacion.length < 10) {
+      throw new Error('La ubicación debe tener al menos 10 caracteres');
+    }
+    
+    // Actualizar el ambiente
+    const response = await ambienteService.updateAmbiente(currentEditingAmbiente.id_ambiente, updateData);
+    
+    console.log('✅ Ambiente actualizado exitosamente:', response);
+    
+    // Cerrar modal y eliminar backdrop si persiste
+    const modalElement = document.getElementById('edit-ambiente-modal');
+    let modal = bootstrap.Modal.getInstance(modalElement);
+    if (!modal) modal = new bootstrap.Modal(modalElement);
+    modal.hide();
+    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+    
+    // Limpiar referencia
+    currentEditingAmbiente = null;
+    
+    // Mostrar mensaje de éxito
+    console.log('🎉 ¡Ambiente actualizado exitosamente!');
+    
+    // Recargar la tabla de ambientes
+    await loadAmbientes();
+    
+  } catch (error) {
+    console.error('❌ Error al actualizar ambiente:', error);
+    showEditModalError(error.message || 'Error al actualizar el ambiente');
+  } finally {
+    setEditSubmitLoading(false);
+  }
+}
+// ...existing code...
 
-// --- FUNCIONES PARA CAMBIO DE ESTADO ---
 
 async function handleStatusSwitch(event) {
   const switchElement = event.target;
@@ -430,79 +571,79 @@ function setEditSubmitLoading(isLoading) {
   }
 }
 
-async function handleEditSubmit(event) {
-  event.preventDefault();
+// async function handleEditSubmit(event) {
+//   event.preventDefault();
   
-  console.log('📝 Procesando formulario de edición de ambiente...');
+//   console.log('📝 Procesando formulario de edición de ambiente...');
   
-  if (!currentEditingAmbiente) {
-    console.error('❌ No hay ambiente seleccionado para editar');
-    showEditModalError('Error: No se encontró el ambiente a editar');
-    return;
-  }
+//   if (!currentEditingAmbiente) {
+//     console.error('❌ No hay ambiente seleccionado para editar');
+//     showEditModalError('Error: No se encontró el ambiente a editar');
+//     return;
+//   }
   
-  // Limpiar errores previos
-  const errorMessage = document.getElementById('edit-modal-error-message');
-  errorMessage.style.display = 'none';
+//   // Limpiar errores previos
+//   const errorMessage = document.getElementById('edit-modal-error-message');
+//   errorMessage.style.display = 'none';
   
-  // Mostrar loading
-  setEditSubmitLoading(true);
+//   // Mostrar loading
+//   setEditSubmitLoading(true);
   
-  try {
-    // Obtener datos del formulario
-    const formData = new FormData(event.target);
-    const updateData = {
-      nombre_ambiente: formData.get('nombre_ambiente').trim(),
-      num_max_aprendices: parseInt(formData.get('num_max_aprendices')),
-      municipio: formData.get('municipio').trim(),
-      ubicacion: formData.get('ubicacion').trim()
-    };
+//   try {
+//     // Obtener datos del formulario
+//     const formData = new FormData(event.target);
+//     const updateData = {
+//       nombre_ambiente: formData.get('nombre_ambiente').trim(),
+//       num_max_aprendices: parseInt(formData.get('num_max_aprendices')),
+//       municipio: formData.get('municipio').trim(),
+//       ubicacion: formData.get('ubicacion').trim()
+//     };
     
-    console.log('📊 Datos para actualizar:', updateData);
-    console.log('🎯 Ambiente a actualizar (ID):', currentEditingAmbiente.id_ambiente);
+//     console.log('📊 Datos para actualizar:', updateData);
+//     console.log('🎯 Ambiente a actualizar (ID):', currentEditingAmbiente.id_ambiente);
     
-    // Validaciones básicas
-    if (!updateData.nombre_ambiente || updateData.nombre_ambiente.length < 3) {
-      throw new Error('El nombre del ambiente debe tener al menos 3 caracteres');
-    }
+//     // Validaciones básicas
+//     if (!updateData.nombre_ambiente || updateData.nombre_ambiente.length < 3) {
+//       throw new Error('El nombre del ambiente debe tener al menos 3 caracteres');
+//     }
     
-    if (!updateData.num_max_aprendices || updateData.num_max_aprendices < 1 || updateData.num_max_aprendices > 100) {
-      throw new Error('La capacidad máxima debe estar entre 1 y 100 aprendices');
-    }
+//     if (!updateData.num_max_aprendices || updateData.num_max_aprendices < 1 || updateData.num_max_aprendices > 100) {
+//       throw new Error('La capacidad máxima debe estar entre 1 y 100 aprendices');
+//     }
     
-    if (!updateData.municipio || updateData.municipio.length < 3) {
-      throw new Error('El municipio debe tener al menos 3 caracteres');
-    }
+//     if (!updateData.municipio || updateData.municipio.length < 3) {
+//       throw new Error('El municipio debe tener al menos 3 caracteres');
+//     }
     
-    if (!updateData.ubicacion || updateData.ubicacion.length < 10) {
-      throw new Error('La ubicación debe tener al menos 10 caracteres');
-    }
+//     if (!updateData.ubicacion || updateData.ubicacion.length < 10) {
+//       throw new Error('La ubicación debe tener al menos 10 caracteres');
+//     }
     
-    // Actualizar el ambiente
-    const response = await ambienteService.updateAmbiente(currentEditingAmbiente.id_ambiente, updateData);
+//     // Actualizar el ambiente
+//     const response = await ambienteService.updateAmbiente(currentEditingAmbiente.id_ambiente, updateData);
     
-    console.log('✅ Ambiente actualizado exitosamente:', response);
+//     console.log('✅ Ambiente actualizado exitosamente:', response);
     
-    // Cerrar modal
-    const modal = bootstrap.Modal.getInstance(document.getElementById('edit-ambiente-modal'));
-    modal.hide();
+//     // Cerrar modal
+//     const modal = bootstrap.Modal.getInstance(document.getElementById('edit-ambiente-modal'));
+//     modal.hide();
     
-    // Limpiar referencia
-    currentEditingAmbiente = null;
+//     // Limpiar referencia
+//     currentEditingAmbiente = null;
     
-    // Mostrar mensaje de éxito
-    console.log('🎉 ¡Ambiente actualizado exitosamente!');
+//     // Mostrar mensaje de éxito
+//     console.log('🎉 ¡Ambiente actualizado exitosamente!');
     
-    // Recargar la tabla de ambientes
-    await loadAmbientes();
+//     // Recargar la tabla de ambientes
+//     await loadAmbientes();
     
-  } catch (error) {
-    console.error('❌ Error al actualizar ambiente:', error);
-    showEditModalError(error.message || 'Error al actualizar el ambiente');
-  } finally {
-    setEditSubmitLoading(false);
-  }
-}
+//   } catch (error) {
+//     console.error('❌ Error al actualizar ambiente:', error);
+//     showEditModalError(error.message || 'Error al actualizar el ambiente');
+//   } finally {
+//     setEditSubmitLoading(false);
+//   }
+// }
 
 function setupTableEventListeners() {
   // Listener para los botones de editar en la tabla

@@ -146,6 +146,68 @@ function setSubmitLoading(isLoading) {
   }
 }
 
+// async function handleCreateSubmit(event) {
+//   event.preventDefault();
+  
+//   console.log('📝 Procesando formulario de creación de centro...');
+  
+//   // Limpiar errores previos
+//   const errorMessage = document.getElementById('modal-error-message');
+//   errorMessage.style.display = 'none';
+  
+//   // Mostrar loading
+//   setSubmitLoading(true);
+  
+//   try {
+//     // Obtener datos del formulario
+//     const formData = new FormData(event.target);
+//     const centroData = {
+//       cod_centro: parseInt(formData.get('cod_centro')),
+//       nombre_centro: formData.get('nombre_centro').trim(),
+//       cod_regional: parseInt(formData.get('cod_regional'))
+//     };
+    
+//     console.log('📊 Datos del centro a crear:', centroData);
+    
+//     // Validaciones básicas
+//     if (!centroData.cod_centro || centroData.cod_centro < 1000 || centroData.cod_centro > 99999) {
+//       throw new Error('El código del centro debe estar entre 1000 y 99999');
+//     }
+    
+//     if (!centroData.nombre_centro || centroData.nombre_centro.length < 3) {
+//       throw new Error('El nombre del centro debe tener al menos 3 caracteres');
+//     }
+    
+//     if (!centroData.cod_regional || centroData.cod_regional < 1) {
+//       throw new Error('El código regional es requerido');
+//     }
+    
+//     // Crear el centro
+//     const response = await centroService.createCentro(centroData);
+    
+//     console.log('✅ Centro creado exitosamente:', response);
+    
+//     // Cerrar modal
+//     const modal = bootstrap.Modal.getInstance(document.getElementById('create-centro-modal'));
+//     modal.hide();
+    
+//     // Mostrar mensaje de éxito (opcional - podrías agregar un toast)
+//     console.log('🎉 ¡Centro creado exitosamente!');
+    
+//     // Recargar la tabla de centros
+//     await loadCentros();
+    
+//   } catch (error) {
+//     console.error('❌ Error al crear centro:', error);
+//     showModalError(error.message || 'Error al crear el centro');
+//   } finally {
+//     setSubmitLoading(false);
+//   }
+// }
+
+// --- FUNCIONES PARA EDICIÓN ---
+
+// ...existing code...
 async function handleCreateSubmit(event) {
   event.preventDefault();
   
@@ -187,9 +249,13 @@ async function handleCreateSubmit(event) {
     
     console.log('✅ Centro creado exitosamente:', response);
     
-    // Cerrar modal
-    const modal = bootstrap.Modal.getInstance(document.getElementById('create-centro-modal'));
+    // Cerrar modal y eliminar backdrop si persiste
+    const modalElement = document.getElementById('create-centro-modal');
+    let modal = bootstrap.Modal.getInstance(modalElement);
+    if (!modal) modal = new bootstrap.Modal(modalElement);
     modal.hide();
+    // Eliminar backdrop si persiste
+    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
     
     // Mostrar mensaje de éxito (opcional - podrías agregar un toast)
     console.log('🎉 ¡Centro creado exitosamente!');
@@ -204,8 +270,75 @@ async function handleCreateSubmit(event) {
     setSubmitLoading(false);
   }
 }
-
-// --- FUNCIONES PARA EDICIÓN ---
+// ...existing code...
+async function handleEditSubmit(event) {
+  event.preventDefault();
+  
+  console.log('📝 Procesando formulario de edición de centro...');
+  
+  if (!currentEditingCentro) {
+    console.error('❌ No hay centro seleccionado para editar');
+    showEditModalError('Error: No se encontró el centro a editar');
+    return;
+  }
+  
+  // Limpiar errores previos
+  const errorMessage = document.getElementById('edit-modal-error-message');
+  errorMessage.style.display = 'none';
+  
+  // Mostrar loading
+  setEditSubmitLoading(true);
+  
+  try {
+    // Obtener datos del formulario
+    const formData = new FormData(event.target);
+    const updateData = {
+      nombre_centro: formData.get('nombre_centro').trim(),
+      cod_regional: parseInt(formData.get('cod_regional'))
+    };
+    
+    console.log('📊 Datos para actualizar:', updateData);
+    console.log('🎯 Centro a actualizar (código):', currentEditingCentro.cod_centro);
+    
+    // Validaciones básicas
+    if (!updateData.nombre_centro || updateData.nombre_centro.length < 3) {
+      throw new Error('El nombre del centro debe tener al menos 3 caracteres');
+    }
+    
+    if (!updateData.cod_regional || updateData.cod_regional < 1) {
+      throw new Error('El código regional es requerido');
+    }
+    
+    // Actualizar el centro
+    const response = await centroService.updateCentro(currentEditingCentro.cod_centro, updateData);
+    
+    console.log('✅ Centro actualizado exitosamente:', response);
+    
+    // Cerrar modal y eliminar backdrop si persiste
+    const modalElement = document.getElementById('edit-centro-modal');
+    let modal = bootstrap.Modal.getInstance(modalElement);
+    if (!modal) modal = new bootstrap.Modal(modalElement);
+    modal.hide();
+    // Eliminar backdrop si persiste
+    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+    
+    // Limpiar referencia
+    currentEditingCentro = null;
+    
+    // Mostrar mensaje de éxito
+    console.log('🎉 ¡Centro actualizado exitosamente!');
+    
+    // Recargar la tabla de centros
+    await loadCentros();
+    
+  } catch (error) {
+    console.error('❌ Error al actualizar centro:', error);
+    showEditModalError(error.message || 'Error al actualizar el centro');
+  } finally {
+    setEditSubmitLoading(false);
+  }
+}
+// ...existing code...
 
 function handleEditButtonClick(event) {
   const editButton = event.target.closest('.btn-edit-centro');
@@ -279,69 +412,69 @@ function setEditSubmitLoading(isLoading) {
   }
 }
 
-async function handleEditSubmit(event) {
-  event.preventDefault();
+// async function handleEditSubmit(event) {
+//   event.preventDefault();
   
-  console.log('📝 Procesando formulario de edición de centro...');
+//   console.log('📝 Procesando formulario de edición de centro...');
   
-  if (!currentEditingCentro) {
-    console.error('❌ No hay centro seleccionado para editar');
-    showEditModalError('Error: No se encontró el centro a editar');
-    return;
-  }
+//   if (!currentEditingCentro) {
+//     console.error('❌ No hay centro seleccionado para editar');
+//     showEditModalError('Error: No se encontró el centro a editar');
+//     return;
+//   }
   
-  // Limpiar errores previos
-  const errorMessage = document.getElementById('edit-modal-error-message');
-  errorMessage.style.display = 'none';
+//   // Limpiar errores previos
+//   const errorMessage = document.getElementById('edit-modal-error-message');
+//   errorMessage.style.display = 'none';
   
-  // Mostrar loading
-  setEditSubmitLoading(true);
+//   // Mostrar loading
+//   setEditSubmitLoading(true);
   
-  try {
-    // Obtener datos del formulario
-    const formData = new FormData(event.target);
-    const updateData = {
-      nombre_centro: formData.get('nombre_centro').trim(),
-      cod_regional: parseInt(formData.get('cod_regional'))
-    };
+//   try {
+//     // Obtener datos del formulario
+//     const formData = new FormData(event.target);
+//     const updateData = {
+//       nombre_centro: formData.get('nombre_centro').trim(),
+//       cod_regional: parseInt(formData.get('cod_regional'))
+//     };
     
-    console.log('📊 Datos para actualizar:', updateData);
-    console.log('🎯 Centro a actualizar (código):', currentEditingCentro.cod_centro);
+//     console.log('📊 Datos para actualizar:', updateData);
+//     console.log('🎯 Centro a actualizar (código):', currentEditingCentro.cod_centro);
     
-    // Validaciones básicas
-    if (!updateData.nombre_centro || updateData.nombre_centro.length < 3) {
-      throw new Error('El nombre del centro debe tener al menos 3 caracteres');
-    }
+//     // Validaciones básicas
+//     if (!updateData.nombre_centro || updateData.nombre_centro.length < 3) {
+//       throw new Error('El nombre del centro debe tener al menos 3 caracteres');
+//     }
     
-    if (!updateData.cod_regional || updateData.cod_regional < 1) {
-      throw new Error('El código regional es requerido');
-    }
+//     if (!updateData.cod_regional || updateData.cod_regional < 1) {
+//       throw new Error('El código regional es requerido');
+//     }
     
-    // Actualizar el centro
-    const response = await centroService.updateCentro(currentEditingCentro.cod_centro, updateData);
+//     // Actualizar el centro
+//     const response = await centroService.updateCentro(currentEditingCentro.cod_centro, updateData);
     
-    console.log('✅ Centro actualizado exitosamente:', response);
+//     console.log('✅ Centro actualizado exitosamente:', response);
     
-    // Cerrar modal
-    const modal = bootstrap.Modal.getInstance(document.getElementById('edit-centro-modal'));
-    modal.hide();
+//     // Cerrar modal
+//     const modal = bootstrap.Modal.getInstance(document.getElementById('edit-centro-modal'));
+//     modal.hide();
     
-    // Limpiar referencia
-    currentEditingCentro = null;
+//     // Limpiar referencia
+//     currentEditingCentro = null;
     
-    // Mostrar mensaje de éxito
-    console.log('🎉 ¡Centro actualizado exitosamente!');
+//     // Mostrar mensaje de éxito
+//     console.log('🎉 ¡Centro actualizado exitosamente!');
     
-    // Recargar la tabla de centros
-    await loadCentros();
+//     // Recargar la tabla de centros
+//     await loadCentros();
     
-  } catch (error) {
-    console.error('❌ Error al actualizar centro:', error);
-    showEditModalError(error.message || 'Error al actualizar el centro');
-  } finally {
-    setEditSubmitLoading(false);
-  }
-}
+//   } catch (error) {
+//     console.error('❌ Error al actualizar centro:', error);
+//     showEditModalError(error.message || 'Error al actualizar el centro');
+//   } finally {
+//     setEditSubmitLoading(false);
+//   }
+// }
 
 function setupEventListeners() {
   // Listener para el formulario de creación
