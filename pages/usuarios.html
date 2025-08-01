@@ -8,13 +8,19 @@
               <div class="d-flex justify-content-between align-items-center px-3">
                 <h6 class="text-white text-capitalize ps-3">Usuarios</h6>
                 <button type="button" class="btn btn-success btn-sm" id="btn-open-create-user">
-                   Agregar Nuevo Usuario
+                  Agregar Nuevo Usuario
                 </button>
               </div>
 
             </div>
           </div>
           <div class="card-body px-0 pb-2">
+            <div class="search-container mb-3 px-3">
+              <div class="input-group">
+                <input type="text" class="form-control" id="user-search" placeholder="Buscar por nombre o correo...">
+              </div>
+              <small class="text-muted mt-1 d-block" id="search-results-count"></small>
+            </div>
             <div class="table-responsive p-0">
               <table class="table align-items-center mb-0">
                 <thead>
@@ -40,7 +46,7 @@
                 </tbody>
               </table>
               <div class="d-flex justify-content-center align-items-center mt-3">
-                    <div id="paginador-usuarios" class="mx-2"></div>
+                <div id="paginador-usuarios" class="mx-2"></div>
               </div>
             </div>
           </div>
@@ -51,119 +57,119 @@
 
 </main>
 <!-- Modal para editar usuario -->
-  <div class="modal fade" id="edit-user-modal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <form id="edit-user-form">
-          <div class="modal-header">
-            <h5 class="modal-title">Editar Usuario</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+<div class="modal fade" id="edit-user-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="edit-user-form">
+        <div class="modal-header">
+          <h5 class="modal-title">Editar Usuario</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+
+          <input type="hidden" id="edit-user-id">
+
+          <!-- Mensaje de error opcional -->
+          <div id="edit-user-error" class="alert alert-danger d-none">
+            <span id="edit-user-error-text"></span>
           </div>
-          <div class="modal-body">
 
-            <input type="hidden" id="edit-user-id">
-
-            <!-- Mensaje de error opcional -->
-            <div id="edit-user-error" class="alert alert-danger d-none">
-              <span id="edit-user-error-text"></span>
-            </div>
-
-            <div class="mb-3">
-              <label for="edit-nombre_completo" class="form-label text-dark fw-bold">Nombre Completo</label>
-              <input type="text" class="form-control" id="edit-nombre_completo" required>
-            </div>
-
-            <div class="mb-3">
-              <label for="edit-correo" class="form-label text-dark fw-bold">Correo</label>
-              <input type="email" class="form-control" id="edit-correo" required>
-            </div>
-
-            <div class="mb-3">
-              <label for="edit-telefono" class="form-label text-dark fw-bold">Teléfono</label>
-              <input type="text" class="form-control" id="edit-telefono" required>
-            </div>
-
-            <div class="mb-3">
-              <label for="edit-tipo_contrato" class="form-label text-dark fw-bold">Tipo de Contrato</label>
-              <input type="text" class="form-control" id="edit-tipo_contrato" required>
-            </div>
-
+          <div class="mb-3">
+            <label for="edit-nombre_completo" class="form-label text-dark fw-bold">Nombre Completo</label>
+            <input type="text" class="form-control" id="edit-nombre_completo" required>
           </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-success">
-              <span>Guardar Cambios</span>
-              <span class="spinner-border spinner-border-sm ms-2 d-none" id="edit-user-loading"></span>
-            </button>
+
+          <div class="mb-3">
+            <label for="edit-correo" class="form-label text-dark fw-bold">Correo</label>
+            <input type="email" class="form-control" id="edit-correo" required>
           </div>
-        </form>
-      </div>
+
+          <div class="mb-3">
+            <label for="edit-telefono" class="form-label text-dark fw-bold">Teléfono</label>
+            <input type="text" class="form-control" id="edit-telefono" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="edit-tipo_contrato" class="form-label text-dark fw-bold">Tipo de Contrato</label>
+            <input type="text" class="form-control" id="edit-tipo_contrato" required>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success">
+            <span>Guardar Cambios</span>
+            <span class="spinner-border spinner-border-sm ms-2 d-none" id="edit-user-loading"></span>
+          </button>
+        </div>
+      </form>
     </div>
   </div>
+</div>
 
-  <!-- Modal para crear usuario -->
-  <div class="modal fade" id="create-user-modal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <form id="create-user-form">
-          <div class="modal-header">
-            <h5 class="modal-title">Crear Usuario</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+<!-- Modal para crear usuario -->
+<div class="modal fade" id="create-user-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="create-user-form">
+        <div class="modal-header">
+          <h5 class="modal-title">Crear Usuario</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+
+          <!-- Mensaje de error opcional -->
+          <div id="create-user-error" class="alert alert-danger d-none">
+            <span id="create-user-error-text"></span>
           </div>
-          <div class="modal-body">
 
-            <!-- Mensaje de error opcional -->
-            <div id="create-user-error" class="alert alert-danger d-none">
-              <span id="create-user-error-text"></span>
-            </div>
-
-            <div class="mb-3">
-              <label for="create-nombre_completo" class="form-label text-dark fw-bold">Nombre Completo</label>
-              <input type="text" class="form-control" id="create-nombre_completo" required>
-            </div>
-
-            <div class="mb-3">
-              <label for="create-identificacion" class="form-label text-dark fw-bold">Identificación</label>
-              <input type="text" class="form-control" id="create-identificacion" required>
-            </div>
-
-            <div class="mb-3">
-              <label for="create-correo" class="form-label text-dark fw-bold">Correo</label>
-              <input type="email" class="form-control" id="create-correo" required>
-            </div>
-
-            <div class="mb-3">
-              <label for="create-pass_hash" class="form-label text-dark fw-bold">Contraseña</label>
-              <input type="password" class="form-control" id="create-pass_hash" required>
-            </div>
-
-            <div class="mb-3">
-              <label for="create-telefono" class="form-label text-dark fw-bold">Teléfono</label>
-              <input type="text" class="form-control" id="create-telefono" required>
-            </div>
-
-            <div class="mb-3">
-              <label for="create-tipo_contrato" class="form-label text-dark fw-bold">Tipo de Contrato</label>
-              <input type="text" class="form-control" id="create-tipo_contrato" required>
-            </div>
-
-            <div class="mb-3">
-              <label for="create-id_rol" class="form-label text-dark fw-bold">Rol</label>
-              <select class="form-select" id="create-id_rol" required>
-                <option value="">Seleccione un rol...</option>
-                <option value="1">Superadmin</option>
-                <option value="2">Admin</option>
-                <option value="3">Instructor</option>
-              </select>
-              <small class="text-muted">Asignar el rol al usuario creado</small>
-            </div>
-
+          <div class="mb-3">
+            <label for="create-nombre_completo" class="form-label text-dark fw-bold">Nombre Completo</label>
+            <input type="text" class="form-control" id="create-nombre_completo" required>
           </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-success">Crear Usuario</button>
+
+          <div class="mb-3">
+            <label for="create-identificacion" class="form-label text-dark fw-bold">Identificación</label>
+            <input type="text" class="form-control" id="create-identificacion" required>
           </div>
-        </form>
-      </div>
+
+          <div class="mb-3">
+            <label for="create-correo" class="form-label text-dark fw-bold">Correo</label>
+            <input type="email" class="form-control" id="create-correo" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="create-pass_hash" class="form-label text-dark fw-bold">Contraseña</label>
+            <input type="password" class="form-control" id="create-pass_hash" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="create-telefono" class="form-label text-dark fw-bold">Teléfono</label>
+            <input type="text" class="form-control" id="create-telefono" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="create-tipo_contrato" class="form-label text-dark fw-bold">Tipo de Contrato</label>
+            <input type="text" class="form-control" id="create-tipo_contrato" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="create-id_rol" class="form-label text-dark fw-bold">Rol</label>
+            <select class="form-select" id="create-id_rol" required>
+              <option value="">Seleccione un rol...</option>
+              <option value="1">Superadmin</option>
+              <option value="2">Admin</option>
+              <option value="3">Instructor</option>
+            </select>
+            <small class="text-muted">Asignar el rol al usuario creado</small>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-success">Crear Usuario</button>
+        </div>
+      </form>
     </div>
   </div>
+</div>

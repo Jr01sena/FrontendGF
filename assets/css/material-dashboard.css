@@ -29150,4 +29150,36 @@ pre[class*=language-] {
   }
 }
 
+/* ========================================
+   CUSTOM SEARCH COMPONENTS
+   ======================================== */
+
+/* Contenedor principal */
+.search-container .input-group {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Input de búsqueda */
+.search-container .form-control {
+  border: 1px solid #dee2e6;
+  padding: 0.5rem 0.75rem;
+  transition: all 0.2s ease;
+}
+
+/* Focus del input (color verde) */
+.search-container .form-control:focus {
+  border-color: #28a745;
+  box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.15);
+  outline: none;
+}
+
+/* Contador de resultados */
+#search-results-count {
+  font-size: 0.75rem;
+  color: #6c757d;
+  margin-left: 0.5rem;
+}
+
 /*# sourceMappingURL=dashboard-free.css.map */
