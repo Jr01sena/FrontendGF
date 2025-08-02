@@ -1,3 +1,5 @@
+import { userService } from '../api/user.service.js';
+
 function init(){
     var ctx = document.getElementById("chart-bars").getContext("2d");
 
@@ -385,6 +387,112 @@ const etiquetasConPosicion = programas.map((p, i) => `${posiciones[i] || (i+1) +
 })
 .catch(err => {
     console.error('Error cargando programas:', err);
+});
+
+// GRÁFICO DE DISTRIBUCIÓN DE ROLES
+userService.getRoleDistribution()
+.then(data => {
+    console.log('Role distribution data:', data);
+    
+    if (!Array.isArray(data) || data.length === 0) {
+        console.error('No hay datos de distribución de roles');
+        return;
+    }
+
+    // Preparar datos para el gráfico
+    const labels = data.map(item => item.rol_nombre);
+    const values = data.map(item => item.cantidad_usuarios);
+    const totalUsers = values.reduce((sum, value) => sum + value, 0);
+
+    // Colores en escala de verdes - del más oscuro al más claro según el porcentaje
+    const sortedData = data
+        .map((item, index) => ({ ...item, originalIndex: index }))
+        .sort((a, b) => b.cantidad_usuarios - a.cantidad_usuarios);
+    
+    const greenScale = [
+        '#0d4e2b', // Verde muy oscuro para el mayor porcentaje
+        '#1e7e34', // Verde oscuro
+        '#28a745', // Verde medio
+        '#51cf66', // Verde claro
+        '#b2f2bb'  // Verde muy claro para el menor porcentaje
+    ];
+
+    // Asignar colores basados en el ranking de usuarios
+    const colors = sortedData.map((_, index) => greenScale[index] || greenScale[greenScale.length - 1]);
+
+    // Actualizar el texto del total de usuarios
+    const totalUsersElement = document.getElementById('total-users-text');
+    if (totalUsersElement) {
+        totalUsersElement.textContent = `Total de usuarios: ${totalUsers}`;
+    }
+
+    // Crear el gráfico circular
+    const ctx = document.getElementById('role-distribution-chart');
+    if (!ctx) {
+        console.error('Canvas para gráfico de roles no encontrado');
+        return;
+    }
+
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Usuarios',
+                data: values,
+                backgroundColor: colors,
+                borderColor: '#ffffff',
+                borderWidth: 3,
+                hoverOffset: 6,
+                hoverBorderColor: '#28a745',
+                hoverBorderWidth: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true,
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: '#1e7e34',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    borderColor: '#28a745',
+                    borderWidth: 2,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.parsed;
+                            const percentage = ((value / totalUsers) * 100).toFixed(1);
+                            return `${context.label}: ${value} usuarios (${percentage}%)`;
+                        }
+                    }
+                }
+            },
+            cutout: '60%', // Para hacer un gráfico de anillo (donut)
+            animation: {
+                animateRotate: true,
+                animateScale: true
+            }
+        }
+    });
+})
+.catch(err => {
+    console.error('Error cargando distribución de roles:', err);
+    // Mostrar mensaje de error en el elemento
+    const totalUsersElement = document.getElementById('total-users-text');
+    if (totalUsersElement) {
+        totalUsersElement.textContent = 'Error cargando datos de usuarios';
+    }
 });
 
 

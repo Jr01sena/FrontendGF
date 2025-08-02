@@ -62,5 +62,13 @@ export const userService = {
         body: JSON.stringify(userData),
         });
     },
+
+    /**
+     * Obtener la distribución de usuarios por rol.
+     * @returns {Promise<Array>} Array con objetos {rol_nombre, cantidad_usuarios}
+     */
+    getRoleDistribution: () => {
+        return request('/users/role-distribution');
+    },
     // Aquí podrías añadir más servicios
 };

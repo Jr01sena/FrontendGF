@@ -498,6 +498,25 @@
             </div>
           </div>
         </div>
+        <!-- INICIO MODULO GRAFICA MARIA -->
+        <div class="col-lg-6 mt-4 mb-3">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="mb-0">Distribución de Roles de Usuario</h6>
+              <p class="text-sm">Composición de usuarios por tipo de rol</p>
+              <div class="pe-2">
+                <div class="chart">
+                  <canvas id="role-distribution-chart" class="chart-canvas" height="180"></canvas>
+                </div>
+              </div>
+              <hr class="dark horizontal">
+              <div class="d-flex">
+                <i class="material-symbols-rounded text-sm my-auto me-1">group</i>
+                <p class="mb-0 text-sm" id="total-users-text">Total de usuarios: --</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
       <!-- FIN MODULO GRAFICA CAMILO -->
       <footer class="footer py-4  ">
@@ -534,3 +553,4 @@
       </footer>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script type="module" src="../js/pages/dashboard.js"></script>
