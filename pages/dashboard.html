@@ -1,4 +1,4 @@
- <div class="container-fluid py-2">
+<div class="container-fluid py-2">
       <div class="row">
         <div class="ms-3">
           <h3 class="mb-0 h4 font-weight-bolder">Dashboard</h3>
@@ -484,6 +484,22 @@
           </div>
         </div>
       </div>
+      <!-- INICIO MODULO GRAFICA CAMILO -->
+      <div class="row">
+        <div class="col-lg-6 mt-4 mb-3">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="mb-0">Top 5 Programas de Formación por duración de horas</h6>
+              <div class="pe-2">
+                <div class="chart">
+                  <canvas id="top-programas-bar" class="chart-canvas" height="180"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- FIN MODULO GRAFICA CAMILO -->
       <footer class="footer py-4  ">
         <div class="container-fluid">
           <div class="row align-items-center justify-content-lg-between">
@@ -517,3 +533,4 @@
         </div>
       </footer>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

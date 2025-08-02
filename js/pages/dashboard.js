@@ -230,5 +230,168 @@ new Chart(ctx3, {
         },
     },
 });
+
+// INICIO MODULO GRAFICA CAMILO
+const token = localStorage.getItem('token');
+if (!token) {
+    window.location.href = '/ruta-a-tu-login.html';
+    return;
 }
+
+fetch('https://api.gestion-formacion.tech/programa/get-all?limit=10000&offset=0', {
+    headers: {
+        'accept': 'application/json',
+        'Authorization': `Bearer ${token}`
+    }
+})
+.then(res => res.json())
+.then(data => {
+    console.log(data); 
+
+
+    let programasArr = [];
+    if (Array.isArray(data.data)) {
+        programasArr = data.data;
+    } else if (Array.isArray(data.items)) {
+        programasArr = data.items;
+    } else if (Array.isArray(data)) {
+        programasArr = data;
+    } else {
+        console.error('Respuesta inesperada del endpoint:', data);
+        return;
+    }
+
+    console.log(programasArr); 
+
+    const posiciones = [
+        '🥇 1°',
+        '🥈 2°',
+        '🥉 3°',
+        '4°',
+        '5°'
+    ];
+    const barraColors = [
+        '#1e7e34', 
+        '#28a745',
+        '#51cf66',
+        '#b2f2bb',
+        '#e6fcf5'  
+    ];
+
+
+    const barraShadows = [
+        '0 4px 12px 0 rgba(30,126,52,0.15)',
+        '0 4px 12px 0 rgba(40,167,69,0.12)',
+        '0 4px 12px 0 rgba(81,207,102,0.10)',
+        '0 4px 12px 0 rgba(178,242,187,0.08)',
+        '0 4px 12px 0 rgba(230,252,245,0.06)'
+    ];
+
+    const programas = programasArr
+        .map(p => ({
+            nombre: p.nombre,
+            horas: Math.round((parseFloat(p.horas_lectivas) || 0) + (parseFloat(p.horas_productivas) || 0))
+        }))
+        .filter(p => !isNaN(p.horas) && p.horas > 0)
+        .sort((a, b) => b.horas - a.horas)
+        .slice(0, 5);
+
+    const maxHoras = Math.max(...programas.map(p => p.horas), 10);
+    let step = 100;
+    if (maxHoras > 1000) step = 1000;
+    else if (maxHoras > 500) step = 500;
+    else if (maxHoras > 100) step = 100;
+    const ejeMax = Math.ceil((maxHoras + step * 0.1) / step) * step;
+
+    const canvas = document.getElementById('top-programas-bar');
+    if (!canvas) return;
+    canvas.height = 60 * programas.length;
+    canvas.width = 900;
+    const ctx = canvas.getContext('2d');
+
+
+    Chart.defaults.elements.bar.borderRadius = 12;
+    Chart.defaults.elements.bar.backgroundColor = barraColors;
+    Chart.defaults.elements.bar.borderSkipped = false;
+
+    const etiquetasY = programas.map((p, i) => `${posiciones[i] || (i+1) + '°'} ${p.nombre}`);
+const etiquetasConPosicion = programas.map((p, i) => `${posiciones[i] || (i+1) + '°'} ${p.nombre}`);
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: etiquetasY,
+            datasets: [{
+                label: 'Duración Total (horas)',
+                data: programas.map(p => p.horas),
+                backgroundColor: barraColors,
+                borderColor: '#fff',
+                borderWidth: 2,
+                barThickness: 28,
+                hoverBackgroundColor: barraColors.map(c => c + 'cc'),
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                title: { display: false },
+                tooltip: {
+                    backgroundColor: '#222',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    borderColor: '#28a745',
+                    borderWidth: 1,
+                    callbacks: {
+                        title: function(context) {
+                            return etiquetasConPosicion[context[0].dataIndex];
+                        },
+                        label: function(context) {
+                            return ` ${context.parsed.x} horas`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    min: 0,
+                    max: ejeMax,
+                    display: false,
+                    grid: {
+                        display: false,
+                        drawBorder: false,
+                        drawOnChartArea: false,
+                        drawTicks: false
+                    }
+                },
+                y: {
+                    title: { display: false },
+                    ticks: {
+                        font: { size: 15, weight: 'bold', family: 'Segoe UI, Arial, sans-serif' },
+                        color: '#222',
+                    },
+                    grid: {
+                        display: false,
+                        drawBorder: false,
+                        drawOnChartArea: false,
+                        drawTicks: false
+                    }
+                }
+            }
+        },
+        plugins: []
+    });
+})
+.catch(err => {
+    console.error('Error cargando programas:', err);
+});
+
+
+}
+init();
 export { init };
+
+localStorage.setItem('token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwicm9sIjoxLCJleHAiOjE3NTQxODgyMjF9.HkQCtPTMns0oKZfwmcZp5K3nvQJoK55oVL5TT38UUTg');
+
+// FIN MODULO GRAFICA CAMILO
