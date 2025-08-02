@@ -144,8 +144,8 @@ export const programacionService = {
         try {
             // TODO: Implementar endpoint en backend para obtener competencias por ficha
             // Por ahora devolvemos array vacío
-            console.warn('⚠️ Endpoint de competencias por ficha no implementado en backend');
-            return [];
+            const response = await request(`/competencia/get-by-ficha/${codFicha}`);
+            return response || [];
         } catch (error) {
             throw error;
         }

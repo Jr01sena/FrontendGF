@@ -8,36 +8,59 @@ let currentInstructorId = null;
 let currentDate = new Date();
 let currentProgramaciones = [];
 let instructoresDisponibles = [];
+let diasFestivos = []; // Se llena dinámicamente desde la API
+
 
 // Elementos del DOM
 let elements = {};
 
 // --- FUNCIONES DE INICIALIZACIÓN ---
 
-function init() {
+// function init() {
+//     try {
+//         console.log('🚀 Inicializando módulo de calendario');
+        
+//         // Obtener información del usuario
+//         loadUserInfo();
+        
+//         // Inicializar elementos del DOM
+//         initializeElements();
+        
+//         // Configurar year selector
+//         setupYearSelector();
+        
+//         // Configurar event listeners
+//         setupEventListeners();
+        
+//         // Configurar interfaz según rol
+//         setupRoleInterface();
+        
+//         console.log('✅ Módulo de calendario inicializado correctamente');
+//     } catch (error) {
+//         console.error('❌ Error al inicializar calendario:', error);
+//     }
+// }
+async function init() {
     try {
         console.log('🚀 Inicializando módulo de calendario');
-        
-        // Obtener información del usuario
+
         loadUserInfo();
-        
-        // Inicializar elementos del DOM
         initializeElements();
-        
-        // Configurar year selector
         setupYearSelector();
-        
-        // Configurar event listeners
         setupEventListeners();
-        
-        // Configurar interfaz según rol
+
+        // Cargar festivos desde backend
+        diasFestivos = await loadFestivos();
+        console.log(`📆 ${diasFestivos.length} festivos cargados`);
+
         setupRoleInterface();
-        
         console.log('✅ Módulo de calendario inicializado correctamente');
     } catch (error) {
         console.error('❌ Error al inicializar calendario:', error);
     }
 }
+
+
 
 function loadUserInfo() {
     const userString = localStorage.getItem('user');
@@ -88,7 +111,7 @@ function initializeElements() {
 function setupYearSelector() {
     const currentYear = new Date().getFullYear();
     const startYear = currentYear - 2;
-    const endYear = currentYear + 3;
+    const endYear = Math.max(currentYear + 3, 2030); // ← Asegura que llegue a 2030
     
     elements.yearSelector.innerHTML = '';
     
@@ -240,6 +263,30 @@ async function loadCalendar() {
     }
 }
 
+async function loadFestivos() {
+    try {
+        const response = await fetch(`http://localhost:8000/festivos/get-all`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+            }
+        });
+
+        const data = await response.json();
+        if (!Array.isArray(data)) throw new Error('Respuesta inválida del backend: no es un arreglo');
+
+        const fechas = data.map(f => f.festivo.split('T')[0]); // ← ⬅️ corrección clave aquí
+        console.log(`✅ ${fechas.length} festivos cargados:`, fechas);
+        return fechas;
+    } catch (error) {
+        console.error('❌ Error al cargar festivos:', error);
+        return [];
+    }
+}
+
+
+console.log('Festivos cargados:', diasFestivos);
+
+
 function filterProgramacionesByMonth(programaciones, date) {
     const year = date.getFullYear();
     const month = date.getMonth();
@@ -304,13 +351,22 @@ function createDayElement(date, currentMonth, today, programaciones) {
     
     // Programaciones del día
     const dayProgramaciones = programaciones.filter(prog => 
-        isSameDay(new Date(prog.fecha_programada), date)
+        isSameDay(parseLocalDate(prog.fecha_programada), date)
     );
     
     dayProgramaciones.forEach(prog => {
         const eventBtn = createProgramacionEvent(prog);
         dayDiv.appendChild(eventBtn);
     });
+
+    const isDomingo = date.getDay() === 0;
+    const isFestivo = diasFestivos.includes(formatDateForAPI(date));
+
+    if (isDomingo || isFestivo) {
+        dayDiv.classList.add('dia-bloqueado');
+        dayDiv.classList.add('disabled');
+        dayDiv.title = isDomingo ? 'Domingo no programable' : 'Festivo no programable';
+    }
     
     return dayDiv;
 }
@@ -527,6 +583,12 @@ function formatDateForAPI(date) {
     return `${year}-${month}-${day}`;
 }
 
+function parseLocalDate(dateStr) {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return new Date(year, month - 1, day); // mes -1 porque enero = 0
+}
+
+
 // --- FUNCIONES DE EDICIÓN Y CREACIÓN ---
 
 let editMode = false;
@@ -665,6 +727,21 @@ async function openNuevaProgramacionModal() {
         const today = new Date();
         document.getElementById('nueva-fecha').value = formatDateForAPI(today);
         
+        const fechaInput = document.getElementById('nueva-fecha');
+        fechaInput.addEventListener('input', (e) => {
+            const fecha = e.target.value;
+            const fechaDate = parseLocalDate(fecha);
+            const esDomingo = fechaDate.getDay() === 0;
+            const esFestivo = diasFestivos.includes(fecha);
+
+            if (esDomingo || esFestivo) {
+                showNuevaModalError('No se puede programar en domingos ni festivos.');
+                e.target.value = '';
+            } else {
+                hideNuevaModalError();
+            }
+        });
+
         modal.show();
         
     } catch (error) {
@@ -696,7 +773,16 @@ async function createNuevaProgramacion() {
             cod_competencia: parseInt(document.getElementById('nueva-competencia').value),
             cod_resultado: parseInt(document.getElementById('nueva-resultado').value)
         };
-        
+
+        const fecha = programacionData.fecha_programada;
+        const fechaDate = parseLocalDate(fecha);
+        const esDomingo = fechaDate.getDay() === 0;
+        const esFestivo = diasFestivos.includes(fecha);
+
+        if (esDomingo || esFestivo) {
+            throw new Error('No se puede crear programación en domingos ni festivos.');
+        }
+
         // Validaciones básicas
         if (!programacionData.cod_ficha || !programacionData.fecha_programada || 
             !programacionData.horas_programadas || !programacionData.hora_inicio || 
@@ -724,13 +810,14 @@ async function createNuevaProgramacion() {
     } catch (error) {
         console.error('❌ Error al crear programación:', error);
         showNuevaModalError(error.message || 'Error al crear la programación');
-        
-        // Restaurar botón
+    } finally {
+        // Restaurar botón SIEMPRE
         const guardarBtn = document.getElementById('guardar-nueva-programacion');
         const guardarText = document.getElementById('guardar-nueva-text');
         guardarBtn.disabled = false;
         guardarText.textContent = 'Crear Programación';
     }
+
 }
 
 async function loadFichasForNewProgramacion() {
@@ -790,7 +877,7 @@ async function loadCompetenciasByFicha() {
             competencias.forEach(competencia => {
                 const option = document.createElement('option');
                 option.value = competencia.cod_competencia;
-                option.textContent = competencia.nombre;
+                option.textContent = `${competencia.cod_competencia} - ${competencia.nombre}`;
                 competenciaSelect.appendChild(option);
             });
         }
@@ -828,7 +915,7 @@ async function loadResultadosByCompetencia() {
             resultados.forEach(resultado => {
                 const option = document.createElement('option');
                 option.value = resultado.cod_resultado;
-                option.textContent = resultado.nombre;
+                option.textContent = `${resultado.cod_resultado} - ${resultado.nombre}`;
                 resultadoSelect.appendChild(option);
             });
         }
