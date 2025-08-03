@@ -5,8 +5,8 @@
 // La importamos para usarla en caso de un error 401.
 import { authService } from './auth.service.js';
 
-const API_BASE_URL = 'https://api.gestion-formacion.tech';
-
+// const API_BASE_URL = 'https://api.gestion-formacion.tech';
+const API_BASE_URL = 'http://localhost:8000';
 
 /**
  * Cliente central para realizar todas las peticiones a la API.

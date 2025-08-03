@@ -1,5 +1,7 @@
+import { request } from "../api/apiClient.js";
 import { programacionService } from '../api/programacion.service.js';
 import { gruposService } from '../api/grupos.service.js';
+
 
 // --- VARIABLES GLOBALES ---
 let currentUser = null;
@@ -16,30 +18,6 @@ let elements = {};
 
 // --- FUNCIONES DE INICIALIZACIÓN ---
 
-// function init() {
-//     try {
-//         console.log('🚀 Inicializando módulo de calendario');
-        
-//         // Obtener información del usuario
-//         loadUserInfo();
-        
-//         // Inicializar elementos del DOM
-//         initializeElements();
-        
-//         // Configurar year selector
-//         setupYearSelector();
-        
-//         // Configurar event listeners
-//         setupEventListeners();
-        
-//         // Configurar interfaz según rol
-//         setupRoleInterface();
-        
-//         console.log('✅ Módulo de calendario inicializado correctamente');
-//     } catch (error) {
-//         console.error('❌ Error al inicializar calendario:', error);
-//     }
-// }
 async function init() {
     try {
         console.log('🚀 Inicializando módulo de calendario');
@@ -330,6 +308,23 @@ function renderCalendar(programaciones) {
     }
 }
 
+function createProgramacionEvent(programacion) {
+    const eventBtn = document.createElement('button');
+    eventBtn.className = 'programacion-event';
+    eventBtn.type = 'button';
+
+    eventBtn.innerHTML = `
+        <span class="ficha-number">${programacion.cod_ficha}</span>
+        <span class="horas">${programacion.horas_programadas}h</span>
+    `;
+
+    eventBtn.addEventListener('click', () => openProgramacionModal(programacion.id_programacion));
+
+    return eventBtn;
+}
+
+
+
 function createDayElement(date, currentMonth, today, programaciones) {
     const dayDiv = document.createElement('div');
     dayDiv.className = 'calendar-day';
@@ -355,7 +350,7 @@ function createDayElement(date, currentMonth, today, programaciones) {
     );
     
     dayProgramaciones.forEach(prog => {
-        const eventBtn = createProgramacionEvent(prog);
+        const eventBtn = createProgramacionEvent(prog);  // ← Ya agrega los datasets internamente
         dayDiv.appendChild(eventBtn);
     });
 
@@ -371,22 +366,7 @@ function createDayElement(date, currentMonth, today, programaciones) {
     return dayDiv;
 }
 
-function createProgramacionEvent(programacion) {
-    const eventBtn = document.createElement('button');
-    eventBtn.className = 'programacion-event';
-    eventBtn.type = 'button';
-    
-    // Contenido del evento
-    eventBtn.innerHTML = `
-        <span class="ficha-number">${programacion.cod_ficha}</span>
-        <span class="horas">${programacion.horas_programadas}h</span>
-    `;
-    
-    // Event listener para abrir modal
-    eventBtn.addEventListener('click', () => openProgramacionModal(programacion.id_programacion));
-    
-    return eventBtn;
-}
+
 
 // --- FUNCIONES DE MODALES ---
 
@@ -588,7 +568,6 @@ function parseLocalDate(dateStr) {
     return new Date(year, month - 1, day); // mes -1 porque enero = 0
 }
 
-
 // --- FUNCIONES DE EDICIÓN Y CREACIÓN ---
 
 let editMode = false;
@@ -652,6 +631,14 @@ async function saveProgramacion() {
             throw new Error('La hora de inicio debe ser menor que la hora de fin');
         }
         
+        // Validar conflicto de horario con otras programaciones (excluyendo la actual)
+        const programacionesEnFecha = currentProgramaciones.filter(p =>
+            p.id_instructor === currentInstructorId &&
+            p.fecha_programada === updateData.fecha_programada &&
+            p.id_programacion !== currentProgramacionId // 👈 Evita compararse consigo misma
+        );
+
+
         // Actualizar programación
         await programacionService.updateProgramacion(currentProgramacionId, updateData);
         
@@ -750,6 +737,7 @@ async function openNuevaProgramacionModal() {
     }
 }
 
+
 async function createNuevaProgramacion() {
     console.log('💾 Creando nueva programación...');
     
@@ -794,7 +782,34 @@ async function createNuevaProgramacion() {
         if (programacionData.hora_inicio >= programacionData.hora_fin) {
             throw new Error('La hora de inicio debe ser menor que la hora de fin');
         }
-        
+
+        // Validar traslape con otras programaciones
+        const fechaNueva = programacionData.fecha_programada;
+        const inicioNueva = programacionData.hora_inicio;
+        const finNueva = programacionData.hora_fin;
+
+        // Filtrar las programaciones del instructor en la misma fecha
+        const programacionesEnFecha = currentProgramaciones.filter(p =>
+            p.id_instructor === programacionData.id_instructor &&
+            p.fecha_programada === fechaNueva
+        );
+
+        const traslape = programacionesEnFecha.some(p => {
+            const iniExistente = p.hora_inicio;
+            const finExistente = p.hora_fin;
+
+            return (
+                (inicioNueva >= iniExistente && inicioNueva < finExistente) || // Inicia dentro de otra
+                (finNueva > iniExistente && finNueva <= finExistente) ||       // Termina dentro de otra
+                (inicioNueva <= iniExistente && finNueva >= finExistente)      // La nueva contiene a otra
+            );
+        });
+
+        if (traslape) {
+            throw new Error('Este horario se cruza con otra programación existente.');
+        }
+
+
         // Crear programación
         await programacionService.createProgramacion(programacionData);
         
@@ -840,8 +855,22 @@ async function loadFichasForNewProgramacion() {
                 option.textContent = `Ficha ${ficha.cod_ficha}`;
                 fichaSelect.appendChild(option);
             });
+
+            // Escuchar cambios en el select de ficha para cargar horario y competencias
+            document.getElementById('nueva-ficha').addEventListener('change', async function () {
+            const codFicha = this.value;
+
+            if (codFicha) {
+                await loadHorarioGrupo(codFicha);       // ← Carga hora_inicio y hora_fin automáticamente
+                await loadCompetenciasByFicha();        // ← Carga competencias y sus resultados
+            } else {
+                document.getElementById('nueva-hora-inicio').value = '';
+                document.getElementById('nueva-hora-fin').value = '';
+            }
+            });
+
         }
-        
+
     } catch (error) {
         console.error('❌ Error al cargar fichas:', error);
         const fichaSelect = document.getElementById('nueva-ficha');
@@ -849,6 +878,27 @@ async function loadFichasForNewProgramacion() {
         fichaSelect.disabled = true;
     }
 }
+
+
+// --- CARGAR HORARIO AUTOMÁTICAMENTE AL SELECCIONAR FICHA ---
+async function loadHorarioGrupo(codFicha) {
+    try {
+        console.log(`⏰ Cargando horario del grupo para ficha ${codFicha}...`);
+
+        const grupo = await request(`/grupo/get-by-cod-ficha/${codFicha}`, {
+            method: 'GET'
+        });
+
+        console.log('🕒 Horario del grupo:', grupo);
+
+        document.getElementById('nueva-hora-inicio').value = grupo.hora_inicio ?? '';
+        document.getElementById('nueva-hora-fin').value = grupo.hora_fin ?? '';
+    } catch (error) {
+        console.error('❌ Error al cargar horario del grupo:', error);
+    }
+}
+
+
 
 async function loadCompetenciasByFicha() {
     const codFicha = document.getElementById('nueva-ficha').value;
