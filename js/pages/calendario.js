@@ -27,16 +27,19 @@ async function init() {
         setupYearSelector();
         setupEventListeners();
 
-        // Cargar festivos desde backend
         diasFestivos = await loadFestivos();
         console.log(`📆 ${diasFestivos.length} festivos cargados`);
 
         setupRoleInterface();
+
+        setupModalAlertReset(); // ← AQUI va la llamada
+
         console.log('✅ Módulo de calendario inicializado correctamente');
     } catch (error) {
         console.error('❌ Error al inicializar calendario:', error);
     }
 }
+
 
 
 
@@ -268,7 +271,7 @@ async function loadCalendar() {
 
 async function loadFestivos() {
     try {
-        const response = await fetch(`http://localhost:8000/festivos/get-all`, {
+        const response = await fetch('https://api.gestion-formacion.tech/festivo/get-all', {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
             }
@@ -584,6 +587,30 @@ function canEditProgramacion(programacion) {
     return false;
 }
 
+function setupModalAlertReset() {
+    const nuevaModal = document.getElementById('nueva-programacion-modal');
+    const editarModal = document.getElementById('programacion-modal');
+
+    if (nuevaModal) {
+        nuevaModal.addEventListener('shown.bs.modal', () => {
+            hideNuevaModalError();
+        });
+        nuevaModal.addEventListener('hidden.bs.modal', () => {
+            hideNuevaModalError();
+        });
+    }
+
+    if (editarModal) {
+        editarModal.addEventListener('shown.bs.modal', () => {
+            hideModalError();
+        });
+        editarModal.addEventListener('hidden.bs.modal', () => {
+            hideModalError();
+        });
+    }
+}
+
+
 // --- FUNCIONES DE ESTADOS UI ---
 
 function showCalendarLoading() {
@@ -629,12 +656,29 @@ function hideModalContent() {
     document.getElementById('modal-content').classList.add('d-none');
 }
 
+function showNuevaModalError(message) {
+    const errorDiv = document.getElementById('nueva-modal-error');
+    const errorText = document.getElementById('nueva-modal-error-text');
+
+    if (errorDiv && errorText) {
+        errorText.textContent = message;
+        errorDiv.classList.remove('d-none');
+    }
+}
+
+function hideNuevaModalError() {
+    const errorDiv = document.getElementById('nueva-modal-error');
+    if (errorDiv) errorDiv.classList.add('d-none');
+}
+
 function showModalError(message) {
     const errorDiv = document.getElementById('modal-error');
     const errorText = document.getElementById('modal-error-text');
-    
-    if (errorText) errorText.textContent = message;
-    if (errorDiv) errorDiv.classList.remove('d-none');
+
+    if (errorDiv && errorText) {
+        errorText.textContent = message;
+        errorDiv.classList.remove('d-none');
+    }
 }
 
 function hideModalError() {
@@ -1240,18 +1284,25 @@ function resetNuevaProgramacionForm() {
     });
 }
 
-function showNuevaModalError(message) {
-    const errorDiv = document.getElementById('nueva-modal-error');
-    const errorText = document.getElementById('nueva-modal-error-text');
-    
-    if (errorText) errorText.textContent = message;
-    if (errorDiv) errorDiv.classList.remove('d-none');
-}
+// --- LIMPIAR ALERTAS AL CERRAR MODALES ---
+document.addEventListener('DOMContentLoaded', () => {
+    const nuevaModal = document.getElementById('nueva-programacion-modal');
+    const editarModal = document.getElementById('programacion-modal');
 
-function hideNuevaModalError() {
-    const errorDiv = document.getElementById('nueva-modal-error');
-    if (errorDiv) errorDiv.classList.add('d-none');
-}
+    if (nuevaModal) {
+        nuevaModal.addEventListener('hidden.bs.modal', () => {
+            hideNuevaModalError();
+        });
+    }
+
+    if (editarModal) {
+        editarModal.addEventListener('hidden.bs.modal', () => {
+            hideModalError();
+        });
+    }
+});
+
+
 
 // --- EXPORTAR FUNCIÓN INIT ---
 

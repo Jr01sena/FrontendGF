@@ -4,10 +4,8 @@
 export const authService = {
     loginUser: async (username, password) => {
         // La lógica de login se queda igual, ya que es un caso único.
-        // const url = 'https://api.gestion-formacion.tech/access/token';
-       
-        const url = 'http://localhost:8000/access/token';
-
+        const url = 'https://api.gestion-formacion.tech/access/token';
+    
         const body = new URLSearchParams({
             username,
             password,
