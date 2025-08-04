@@ -166,24 +166,49 @@ function updateSelectorsFromDate() {
 // --- FUNCIONES DE CARGA DE DATOS ---
 
 async function loadInstructores() {
-    try {
-        console.log('👥 Cargando instructores disponibles...');
-        instructoresDisponibles = await gruposService.getInstructoresDisponibles();
-        
-        // Poblar selector
-        elements.instructorSelector.innerHTML = '<option value="">Seleccionar Instructor...</option>';
-        instructoresDisponibles.forEach(instructor => {
-            const option = document.createElement('option');
-            option.value = instructor.id_usuario;
-            option.textContent = instructor.nombre_completo || `Usuario ID: ${instructor.id_usuario}`;
-            elements.instructorSelector.appendChild(option);
-        });
-        
-        console.log(`✅ ${instructoresDisponibles.length} instructores cargados`);
-    } catch (error) {
-        console.error('❌ Error al cargar instructores:', error);
+  try {
+    console.log('👥 Cargando instructores disponibles...');
+
+    // Obtener instructores desde la API
+    instructoresDisponibles = await gruposService.getInstructoresDisponibles();
+
+    const selectId = '#instructor-selector'; // Selector CSS para TomSelect
+    const select = document.querySelector(selectId);
+
+    // Limpiar el contenido del select manualmente
+    select.innerHTML = '';
+
+    // Crear opciones
+    const opciones = instructoresDisponibles.map(instructor => ({
+      value: instructor.id_usuario,
+      text: instructor.nombre_completo || `Usuario ID: ${instructor.id_usuario}`
+    }));
+
+    // Destruir instancia anterior de TomSelect si existe
+    if (select.tomselect) {
+      select.tomselect.destroy();
     }
+
+    // Inicializar TomSelect con opciones
+    new TomSelect(selectId, {
+      options: opciones,
+      placeholder: 'Buscar instructor...',
+      create: false,
+      searchField: ['text'], // Búsqueda completa
+      sortField: {
+        field: 'text',
+        direction: 'asc'
+      },
+      maxOptions: 100,
+      highlight: true
+    });
+
+    console.log(`✅ ${instructoresDisponibles.length} instructores cargados`);
+  } catch (error) {
+    console.error('❌ Error al cargar instructores:', error);
+  }
 }
+
 
 function handleInstructorChange() {
     const selectedInstructorId = parseInt(elements.instructorSelector.value);
@@ -494,6 +519,43 @@ function populateProgramacionForm(programacion) {
             console.warn('⚠️ No se pudo cargar detalles del grupo o programa:', error);
         }
     })();
+
+    // Calcular totales del mes
+    try {
+    const fichaActual = programacion.cod_ficha;
+    const mesActual = currentDate.getMonth(); // de 0 a 11
+    const anioActual = currentDate.getFullYear();
+
+    // Asegúrate de que currentProgramaciones esté poblado
+    const programacionesInstructor = currentProgramaciones || [];
+
+    // 🔵 Total de horas de la ficha seleccionada
+    const totalFicha = programacionesInstructor
+        .filter(p => p.cod_ficha === fichaActual)
+        .filter(p => {
+        const fecha = new Date(p.fecha_programada);
+        return fecha.getMonth() === mesActual && fecha.getFullYear() === anioActual;
+        })
+        .reduce((acc, p) => acc + (p.horas_programadas || 0), 0);
+
+    // 🟢 Total de horas del instructor (todas las fichas)
+    const totalInstructor = programacionesInstructor
+        .filter(p => {
+        const fecha = new Date(p.fecha_programada);
+        return fecha.getMonth() === mesActual && fecha.getFullYear() === anioActual;
+        })
+        .reduce((acc, p) => acc + (p.horas_programadas || 0), 0);
+
+    // Mostrar en el modal
+    document.getElementById('modal-total-instructor').value = `${totalInstructor} horas`;
+    document.getElementById('modal-total-ficha').value = `${totalFicha} horas`;
+
+    } catch (error) {
+    console.warn('⚠️ Error al calcular totales mensuales:', error);
+    document.getElementById('modal-total-instructor').value = 'Error';
+    document.getElementById('modal-total-ficha').value = 'Error';
+    }
+
 }
 
 
