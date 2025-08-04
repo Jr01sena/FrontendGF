@@ -271,7 +271,7 @@ async function loadCalendar() {
 
 async function loadFestivos() {
     try {
-        const response = await fetch('https://api.gestion-formacion.tech/festivo/get-all', {
+        const response = await fetch('https://api.gestion-formacion.tech/festivos/get-all', {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
             }
