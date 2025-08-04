@@ -208,16 +208,30 @@
               </div>
 
               <!-- Competencia -->
+              <!-- Competencia (texto + select) -->
               <div class="col-12 mb-3">
                 <label for="modal-competencia" class="form-label fw-bold">Competencia</label>
-                <textarea id="modal-competencia" class="form-control" rows="2" readonly></textarea>
+                
+                <!-- Texto para vista -->
+                <textarea id="modal-competencia-text" class="form-control" rows="2" readonly></textarea>
+
+                <!-- Select para edición -->
+                <select id="modal-competencia-select" class="form-select d-none mt-2"></select>
               </div>
 
+
               <!-- Resultado de Aprendizaje -->
+              <!-- Resultado de Aprendizaje (texto + select) -->
               <div class="col-12 mb-3">
                 <label for="modal-resultado" class="form-label fw-bold">Resultado de Aprendizaje</label>
-                <textarea id="modal-resultado" class="form-control" rows="3" readonly></textarea>
+                
+                <!-- Texto para vista -->
+                <textarea id="modal-resultado-text" class="form-control" rows="3" readonly></textarea>
+
+                <!-- Select para edición -->
+                <select id="modal-resultado-select" class="form-select d-none mt-2"></select>
               </div>
+
 
               <!-- Instructor (solo visible para coordinadores) -->
               <div class="col-12 mb-3" id="modal-instructor-container">

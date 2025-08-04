@@ -447,14 +447,19 @@ async function openProgramacionModal(idProgramacion) {
 }
 
 function populateProgramacionForm(programacion) {
+    // Guardar una copia para editar después (si usas enableEditMode)
+    window.programacionOriginal = programacion;
+
     document.getElementById('modal-cod-ficha').value = programacion.cod_ficha || '';
     document.getElementById('modal-fecha').value = programacion.fecha_programada || '';
     document.getElementById('modal-horas').value = programacion.horas_programadas || '';
     document.getElementById('modal-hora-inicio').value = programacion.hora_inicio || '';
     document.getElementById('modal-hora-fin').value = programacion.hora_fin || '';
-    document.getElementById('modal-competencia').value = programacion.nombre_competencia || '';
-    document.getElementById('modal-resultado').value = programacion.nombre_resultado || '';
-    
+
+    // Mostrar texto plano inicialmente
+    document.getElementById('modal-competencia-text').value = `${programacion.cod_competencia || ''} - ${programacion.nombre_competencia || ''}`;
+    document.getElementById('modal-resultado-text').value = `${programacion.cod_resultado || ''} - ${programacion.nombre_resultado || ''}`;
+
     // Mostrar instructor solo para coordinadores
     const instructorContainer = document.getElementById('modal-instructor-container');
     if (currentRole === 1 || currentRole === 2) {
@@ -463,7 +468,11 @@ function populateProgramacionForm(programacion) {
     } else {
         instructorContainer.classList.add('d-none');
     }
+
+    // Asigna correctamente el ID de la programación actual
+    currentProgramacionId = programacion.id_programacion;
 }
+
 
 function setupModalButtons(programacion) {
     const editBtn = document.getElementById('edit-programacion-btn');
@@ -573,88 +582,199 @@ function parseLocalDate(dateStr) {
 let editMode = false;
 let currentProgramacionId = null;
 
-function enableEditMode() {
+async function enableEditMode() {
     console.log('🔧 Habilitando modo edición...');
     editMode = true;
-    
+
     // Habilitar campos editables
-    const editableFields = ['modal-fecha', 'modal-horas', 'modal-hora-inicio', 'modal-hora-fin'];
+    const editableFields = ['modal-fecha', 'modal-horas'];
     editableFields.forEach(fieldId => {
         const field = document.getElementById(fieldId);
         if (field) field.removeAttribute('readonly');
     });
-    
+
+    // Mostrar selects y ocultar texto plano para competencia y resultado
+    document.getElementById('modal-competencia-text').classList.add('d-none');
+    document.getElementById('modal-resultado-text').classList.add('d-none');
+    document.getElementById('modal-competencia-select').classList.remove('d-none');
+    document.getElementById('modal-resultado-select').classList.remove('d-none');
+
+    // Obtener cod_ficha actual (ya cargado en el campo de solo lectura)
+    const codFicha = document.getElementById('modal-cod-ficha').value;
+    if (!codFicha) {
+        showModalError('No se encontró la ficha para editar');
+        return;
+    }
+
+    try {
+        // Cargar hora inicio y fin desde la ficha (solo lectura)
+        await loadHorarioGrupo(codFicha);
+
+        // Cargar competencias y resultados correspondientes
+        await loadCompetenciasByFichaEnEdicion(codFicha);
+
+        // Cargar la programación original para seleccionar valores actuales
+        const programacion = window.programacionOriginal;
+
+        // Preseleccionar competencia y resultado actuales
+        if (programacion.cod_competencia) {
+            document.getElementById('modal-competencia-select').value = programacion.cod_competencia;
+            // Cargar resultados para esa competencia y seleccionar el actual
+            const resultados = await programacionService.getResultadosByCompetencia(programacion.cod_competencia);
+            const resultadoSelect = document.getElementById('modal-resultado-select');
+            resultadoSelect.innerHTML = '<option value="">Seleccionar resultado...</option>';
+            resultados.forEach(resultado => {
+                const option = document.createElement('option');
+                option.value = resultado.cod_resultado;
+                option.textContent = `${resultado.cod_resultado} - ${resultado.nombre}`;
+                resultadoSelect.appendChild(option);
+            });
+            resultadoSelect.value = programacion.cod_resultado || '';
+        }
+
+    } catch (error) {
+        console.error('❌ Error en enableEditMode:', error);
+        showModalError('Error al preparar la edición');
+    }
+
     // Mostrar/ocultar botones
     document.getElementById('edit-programacion-btn').classList.add('d-none');
     document.getElementById('save-programacion-btn').classList.remove('d-none');
     document.getElementById('cancel-edit-btn').classList.remove('d-none');
-    
+
     // Cambiar título del modal
     document.getElementById('programacion-modal-label').innerHTML = `
         <i class="material-symbols-rounded me-2">edit</i>
         Editar Programación
     `;
+
+    // Validar que no se permita seleccionar domingos ni festivos
+    const fechaInput = document.getElementById('modal-fecha');
+    fechaInput.addEventListener('input', (e) => {
+        const fecha = e.target.value;
+        const fechaDate = parseLocalDate(fecha);
+        const esDomingo = fechaDate.getDay() === 0;
+        const esFestivo = diasFestivos.includes(fecha);
+
+        if (esDomingo || esFestivo) {
+            showModalError('No se puede programar en domingos ni festivos.');
+            e.target.value = '';
+        } else {
+            hideModalError();
+        }
+    });
+
 }
+
+async function loadCompetenciasByFichaEnEdicion(codFicha) {
+    try {
+        const competencias = await programacionService.getCompetenciasByFicha(parseInt(codFicha));
+        const competenciaSelect = document.getElementById('modal-competencia-select');
+        competenciaSelect.innerHTML = '<option value="">Seleccionar competencia...</option>';
+
+        competencias.forEach(competencia => {
+            const option = document.createElement('option');
+            option.value = competencia.cod_competencia;
+            option.textContent = `${competencia.cod_competencia} - ${competencia.nombre}`;
+            competenciaSelect.appendChild(option);
+        });
+
+        // Al cambiar la competencia, se cargan los resultados asociados
+        competenciaSelect.addEventListener('change', async () => {
+            const codCompetencia = competenciaSelect.value;
+            const resultados = await programacionService.getResultadosByCompetencia(parseInt(codCompetencia));
+
+            const resultadoSelect = document.getElementById('modal-resultado-select');
+            resultadoSelect.innerHTML = '<option value="">Seleccionar resultado...</option>';
+
+            resultados.forEach(resultado => {
+                const option = document.createElement('option');
+                option.value = resultado.cod_resultado;
+                option.textContent = `${resultado.cod_resultado} - ${resultado.nombre}`;
+                resultadoSelect.appendChild(option);
+            });
+        });
+
+    } catch (error) {
+        console.error('❌ Error al cargar competencias en edición:', error);
+    }
+}
+
 
 async function saveProgramacion() {
     console.log('💾 Guardando programación...');
-    
+
     if (!currentProgramacionId) {
         showModalError('No hay programación seleccionada para guardar');
         return;
     }
-    
+
     try {
         // Deshabilitar botón mientras se guarda
         const saveBtn = document.getElementById('save-programacion-btn');
         const saveText = document.getElementById('save-programacion-text');
         const originalText = saveText.textContent;
-        
+
         saveBtn.disabled = true;
         saveText.textContent = 'Guardando...';
-        
+
         // Obtener datos del formulario
         const updateData = {
             fecha_programada: document.getElementById('modal-fecha').value,
             horas_programadas: parseInt(document.getElementById('modal-horas').value),
             hora_inicio: document.getElementById('modal-hora-inicio').value,
-            hora_fin: document.getElementById('modal-hora-fin').value
+            hora_fin: document.getElementById('modal-hora-fin').value,
+            cod_competencia: parseInt(document.getElementById('modal-competencia-select').value),
+            cod_resultado: parseInt(document.getElementById('modal-resultado-select').value)
         };
-        
+
         // Validaciones básicas
-        if (!updateData.fecha_programada || !updateData.horas_programadas || 
-            !updateData.hora_inicio || !updateData.hora_fin) {
+        if (!updateData.fecha_programada || isNaN(updateData.horas_programadas) ||
+            !updateData.hora_inicio || !updateData.hora_fin ||
+            isNaN(updateData.cod_competencia) || isNaN(updateData.cod_resultado)) {
             throw new Error('Todos los campos son obligatorios');
         }
-        
+
         if (updateData.hora_inicio >= updateData.hora_fin) {
             throw new Error('La hora de inicio debe ser menor que la hora de fin');
         }
-        
+
         // Validar conflicto de horario con otras programaciones (excluyendo la actual)
         const programacionesEnFecha = currentProgramaciones.filter(p =>
             p.id_instructor === currentInstructorId &&
             p.fecha_programada === updateData.fecha_programada &&
-            p.id_programacion !== currentProgramacionId // 👈 Evita compararse consigo misma
+            p.id_programacion !== currentProgramacionId
         );
 
+        const traslape = programacionesEnFecha.some(p => {
+            return (
+                (updateData.hora_inicio >= p.hora_inicio && updateData.hora_inicio < p.hora_fin) ||
+                (updateData.hora_fin > p.hora_inicio && updateData.hora_fin <= p.hora_fin) ||
+                (updateData.hora_inicio <= p.hora_inicio && updateData.hora_fin >= p.hora_fin)
+            );
+        });
+
+        if (traslape) {
+            throw new Error('Este horario se cruza con otra programación existente.');
+        }
 
         // Actualizar programación
         await programacionService.updateProgramacion(currentProgramacionId, updateData);
-        
+
         // Cerrar modal y recargar calendario
         const modal = bootstrap.Modal.getInstance(elements.programacionModal);
         modal.hide();
-        
+
         // Recargar calendario
         await loadCalendar();
-        
+
         console.log('✅ Programación actualizada correctamente');
-        
+
     } catch (error) {
         console.error('❌ Error al guardar programación:', error);
         showModalError(error.message || 'Error al guardar los cambios');
-        
+
+    } finally {
         // Restaurar botón
         const saveBtn = document.getElementById('save-programacion-btn');
         const saveText = document.getElementById('save-programacion-text');
@@ -662,6 +782,7 @@ async function saveProgramacion() {
         saveText.textContent = 'Guardar Cambios';
     }
 }
+
 
 function cancelEditMode() {
     console.log('❌ Cancelando edición...');
@@ -678,25 +799,45 @@ function cancelEditMode() {
 function resetEditMode() {
     editMode = false;
     currentProgramacionId = null;
-    
+
     // Restaurar campos como readonly
-    const editableFields = ['modal-fecha', 'modal-horas', 'modal-hora-inicio', 'modal-hora-fin'];
+    const editableFields = ['modal-fecha', 'modal-horas'];
     editableFields.forEach(fieldId => {
         const field = document.getElementById(fieldId);
         if (field) field.setAttribute('readonly', true);
     });
-    
+
+    // Restaurar visibilidad: ocultar selects, mostrar texto
+    const competenciaText = document.getElementById('modal-competencia-text');
+    const resultadoText = document.getElementById('modal-resultado-text');
+    const competenciaSelect = document.getElementById('modal-competencia-select');
+    const resultadoSelect = document.getElementById('modal-resultado-select');
+
+    if (competenciaText) competenciaText.classList.remove('d-none');
+    if (resultadoText) resultadoText.classList.remove('d-none');
+    if (competenciaSelect) competenciaSelect.classList.add('d-none');
+    if (resultadoSelect) resultadoSelect.classList.add('d-none');
+
+    // Limpiar selects de edición
+    if (competenciaSelect) competenciaSelect.innerHTML = '<option value="">Seleccionar competencia...</option>';
+    if (resultadoSelect) resultadoSelect.innerHTML = '<option value="">Seleccionar resultado...</option>';
+
     // Restaurar botones
     document.getElementById('edit-programacion-btn').classList.remove('d-none');
     document.getElementById('save-programacion-btn').classList.add('d-none');
     document.getElementById('cancel-edit-btn').classList.add('d-none');
-    
+
     // Restaurar título del modal
     document.getElementById('programacion-modal-label').innerHTML = `
         <i class="material-symbols-rounded me-2">event_note</i>
         Detalles de Programación
     `;
+
+    delete window.programacionOriginal;
+
 }
+
+
 
 async function openNuevaProgramacionModal() {
     console.log('➕ Abriendo modal nueva programación...');
