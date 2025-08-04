@@ -177,6 +177,12 @@
         <div id="modal-content" class="d-none">
           <form id="programacion-form">
             <div class="row">
+              <!-- Programa -->
+              <div class="mb-2">
+                <label for="modal-programa" class="form-label fw-bold">Programa</label>
+                <input id="modal-programa" type="text" class="form-control fw-bold text-success" readonly>
+              </div>
+
               <!-- Información de la Ficha -->
               <div class="col-md-6 mb-3">
                 <label class="form-label fw-bold">Número de Ficha</label>
@@ -231,6 +237,22 @@
                 <!-- Select para edición -->
                 <select id="modal-resultado-select" class="form-select d-none mt-2"></select>
               </div>
+
+              <div class="col-md-4 mb-3">
+                <label for="modal-modalidad" class="form-label fw-bold">Modalidad</label>
+                <input id="modal-modalidad" type="text" class="form-control" readonly>
+              </div>
+
+              <div class="col-md-4 mb-3">
+                <label for="modal-municipio" class="form-label fw-bold">Municipio</label>
+                <input id="modal-municipio" type="text" class="form-control" readonly>
+              </div>
+
+              <div class="col-md-4 mb-3">
+                <label for="modal-ambiente" class="form-label fw-bold">Ambiente</label>
+                <input id="modal-ambiente" type="text" class="form-control" readonly>
+              </div>
+
 
 
               <!-- Instructor (solo visible para coordinadores) -->
@@ -292,6 +314,13 @@
                 <option value="">Seleccionar ficha...</option>
               </select>
             </div>
+
+            <!-- Programa -->
+             <div class="col-12 mb-3">
+                <label for="nueva-programa" class="form-label fw-bold">Programa</label>
+                <input id="nueva-programa" type="text" class="form-control fw-bold text-success" readonly>
+            </div>
+
 
             <!-- Competencia -->
             <div class="col-12 mb-3">

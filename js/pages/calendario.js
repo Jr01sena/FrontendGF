@@ -447,7 +447,6 @@ async function openProgramacionModal(idProgramacion) {
 }
 
 function populateProgramacionForm(programacion) {
-    // Guardar una copia para editar después (si usas enableEditMode)
     window.programacionOriginal = programacion;
 
     document.getElementById('modal-cod-ficha').value = programacion.cod_ficha || '';
@@ -456,11 +455,9 @@ function populateProgramacionForm(programacion) {
     document.getElementById('modal-hora-inicio').value = programacion.hora_inicio || '';
     document.getElementById('modal-hora-fin').value = programacion.hora_fin || '';
 
-    // Mostrar texto plano inicialmente
     document.getElementById('modal-competencia-text').value = `${programacion.cod_competencia || ''} - ${programacion.nombre_competencia || ''}`;
     document.getElementById('modal-resultado-text').value = `${programacion.cod_resultado || ''} - ${programacion.nombre_resultado || ''}`;
 
-    // Mostrar instructor solo para coordinadores
     const instructorContainer = document.getElementById('modal-instructor-container');
     if (currentRole === 1 || currentRole === 2) {
         document.getElementById('modal-instructor').value = programacion.nombre_instructor || '';
@@ -469,8 +466,34 @@ function populateProgramacionForm(programacion) {
         instructorContainer.classList.add('d-none');
     }
 
-    // Asigna correctamente el ID de la programación actual
     currentProgramacionId = programacion.id_programacion;
+
+    (async () => {
+        try {
+            const codFicha = programacion.cod_ficha;
+
+            const [grupo] = await gruposService.getGruposByCodFicha(codFicha);
+            console.log('📦 Grupo:', grupo);
+            if (!grupo) return;
+
+            const programa = await gruposService.getProgramaFormacion(grupo.cod_programa, grupo.la_version);
+            console.log('📘 Programa:', programa);
+
+            const ambientes = await gruposService.getAmbientesDisponibles();
+            console.log('🏠 Ambientes disponibles:', ambientes);
+
+            const ambienteActual = ambientes.find(a => a.id_ambiente === grupo.id_ambiente);
+            console.log('✅ Ambiente actual:', ambienteActual);
+
+            document.getElementById('modal-programa').value = programa?.nombre || '';
+            document.getElementById('modal-modalidad').value = grupo?.modalidad || 'No disponible';
+            document.getElementById('modal-municipio').value = grupo?.nombre_municipio || 'No disponible';
+            document.getElementById('modal-ambiente').value = ambienteActual?.nombre_ambiente || 'Sin ambiente';
+
+        } catch (error) {
+            console.warn('⚠️ No se pudo cargar detalles del grupo o programa:', error);
+        }
+    })();
 }
 
 
@@ -1001,12 +1024,32 @@ async function loadFichasForNewProgramacion() {
             document.getElementById('nueva-ficha').addEventListener('change', async function () {
             const codFicha = this.value;
 
-            if (codFicha) {
-                await loadHorarioGrupo(codFicha);       // ← Carga hora_inicio y hora_fin automáticamente
-                await loadCompetenciasByFicha();        // ← Carga competencias y sus resultados
-            } else {
-                document.getElementById('nueva-hora-inicio').value = '';
-                document.getElementById('nueva-hora-fin').value = '';
+            // Limpiar campos
+            document.getElementById('nueva-hora-inicio').value = '';
+            document.getElementById('nueva-hora-fin').value = '';
+            document.getElementById('nueva-programa').value = '';
+
+            if (!codFicha) return;
+
+            try {
+                // 1. Obtener el grupo usando el código de ficha
+                const [grupo] = await gruposService.getGruposByCodFicha(codFicha);
+                if (!grupo) throw new Error('Grupo no encontrado para la ficha seleccionada');
+
+                // 2. Asignar horas si existen
+                document.getElementById('nueva-hora-inicio').value = grupo.hora_inicio ?? '';
+                document.getElementById('nueva-hora-fin').value = grupo.hora_fin ?? '';
+
+                // 3. Obtener nombre del programa formativo
+                const programa = await gruposService.getProgramaFormacion(grupo.cod_programa, grupo.la_version);
+                document.getElementById('nueva-programa').value = programa?.nombre || 'Programa no encontrado';
+
+                // 4. (Opcional) Cargar competencias si aún no lo haces
+                await loadCompetenciasByFicha();
+
+            } catch (error) {
+                console.warn('❌ Error al cargar grupo/programa:', error);
+                document.getElementById('nueva-programa').value = 'Error al cargar programa';
             }
             });
 
