@@ -417,6 +417,9 @@ fetch('https://api.gestion-formacion.tech/programa/get-all?limit=10000&offset=0'
         },
         plugins: []
     });
+
+
+    console.log("✅ Gráfica de programas proyectada. Datos:", programas);
 })
 .catch(err => {
     console.error('Error cargando programas:', err);
