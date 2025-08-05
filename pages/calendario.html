@@ -477,27 +477,13 @@
 
 
 .calendar-day.dia-bloqueado {
-  background: repeating-linear-gradient(
-    45deg,
-    #e5e7eb,
-    #e5e7eb 10px,
-    #d1d5db 10px,
-    #d1d5db 20px
-  ); /* patrón rayado gris elegante */
-  border: 1px solid #9ca3af;
-  color: #6b7280; /* texto más tenue */
+  background-color: #e0e0e0; /* gris suave moderno */
+  color: #9e9e9e;            /* texto atenuado */
+  border: 1px solid #bdbdbd; /* borde ligeramente contrastante */
   cursor: not-allowed;
-  position: relative;
-  opacity: 0.85;
-  pointer-events: none; /* evita clics */
-  box-shadow: inset 0 0 0 1px #9ca3af;
-}
-
-.calendar-day.dia-bloqueado .day-number {
-  font-weight: 600;
-  color: #4b5563;
-  text-shadow: 1px 1px 1px white;
-  opacity: 0.7;
+  opacity: 0.9;
+  pointer-events: none;      /* evita clics */
+  box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.05);
 }
 
 
