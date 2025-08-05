@@ -217,11 +217,20 @@ if (logoutButton) {
 document.addEventListener('DOMContentLoaded', () => {
   const user = JSON.parse(localStorage.getItem('user'));
 
-  // Si es rol 3 (instructor), iniciar en Calendario
+  // Si ya hay un módulo cargado desde la URL o sesión, no sobreescribas
+  const currentPage = location.hash?.replace('#', '') || null;
+  if (currentPage) {
+    loadContent(currentPage);
+    return;
+  }
+
+  // Redirección condicional por rol
   if (user?.id_rol === 3) {
     loadContent('calendario');
+    history.replaceState(null, '', '#calendario');
   } else {
     loadContent('dashboard');
+    history.replaceState(null, '', '#dashboard');
   }
 });
 
