@@ -595,14 +595,17 @@ function setupModalAlertReset() {
 
     nuevaModal.addEventListener('hidden.bs.modal', () => {
         nuevaError.classList.add('d-none');
-        nuevaError.querySelector('#nueva-modal-error-text').textContent = '';
+        nuevaError.style.display = 'none'; // 🧼 Limpieza total
+        document.getElementById('nueva-modal-error-text').textContent = '';
     });
 
     modal.addEventListener('hidden.bs.modal', () => {
         error.classList.add('d-none');
-        error.querySelector('#modal-error-text').textContent = '';
+        error.style.display = 'none'; // 🧼 Limpieza total
+        document.getElementById('modal-error-text').textContent = '';
     });
 }
+
 
 
 
@@ -650,20 +653,26 @@ function showModalContent() {
 function showModalError(message) {
     const errorDiv = document.getElementById('modal-error');
     const errorText = document.getElementById('modal-error-text');
+
     if (errorDiv && errorText) {
-        errorText.textContent = message;
-        errorDiv.classList.remove('d-none'); // 💡 Esto asegura visibilidad
+        errorText.innerText = message;
+        errorDiv.classList.remove('d-none');
+        errorDiv.style.display = 'block'; // 🔑 Este es el truco clave
     }
 }
+
 
 function showNuevaModalError(message) {
     const errorDiv = document.getElementById('nueva-modal-error');
     const errorText = document.getElementById('nueva-modal-error-text');
+
     if (errorDiv && errorText) {
-        errorText.textContent = message;
-        errorDiv.classList.remove('d-none'); // 💡 También aquí
+        errorText.innerText = message;
+        errorDiv.classList.remove('d-none');
+        errorDiv.style.display = 'block'; // 🔑 Fuerza visibilidad por si Bootstrap interfiere
     }
 }
+
 
 
 function hideModalContent() {
