@@ -294,38 +294,7 @@ async function handleStatusSwitch(event) {
   }
 }
 
-document.getElementById('btn-open-create-user').addEventListener('click', () => {
-  const modal = new bootstrap.Modal(document.getElementById('create-user-modal'));
-  modal.show();
-});
-
-document.getElementById('create-user-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const userString = localStorage.getItem('user');
-  const user = JSON.parse(userString);
-
-  const newUser = {
-    nombre_completo: document.getElementById('create-nombre_completo').value,
-    identificacion: document.getElementById('create-identificacion').value,
-    correo: document.getElementById('create-correo').value,
-    pass_hash: document.getElementById('create-pass_hash').value,
-    telefono: document.getElementById('create-telefono').value,
-    tipo_contrato: document.getElementById('create-tipo_contrato').value,
-    id_rol: parseInt(document.getElementById('create-id_rol').value),
-    estado: true,
-    cod_centro: user.cod_centro
-  };
-
-  try {
-    await userService.createUser(newUser);
-    bootstrap.Modal.getInstance(document.getElementById('create-user-modal')).hide();
-    alert('Usuario creado exitosamente');
-    await reloadUsersData(); // Usar reloadUsersData en lugar de init()
-  } catch (error) {
-    alert(error?.message || 'Error al crear usuario');
-    console.error('Error creando usuario:', error);
-  }
-});
+// Los event listeners se manejan en setupEventListeners()
 
 // Función para recargar datos manteniendo la búsqueda activa
 async function reloadUsersData() {
@@ -426,6 +395,8 @@ function setupEventListeners() {
   const tableBody = document.getElementById('users-table-body');
   const editForm = document.getElementById('edit-user-form');
   const searchInput = document.getElementById('user-search');
+  const createUserButton = document.getElementById('btn-open-create-user');
+  const createUserForm = document.getElementById('create-user-form');
 
   // Event listeners para tabla
   if (tableBody) {
@@ -448,6 +419,45 @@ function setupEventListeners() {
     searchInput.removeEventListener('keydown', handleSearchKeydown);
     searchInput.addEventListener('keydown', handleSearchKeydown);
   }
+
+  // Event listener para botón de crear usuario
+  if (createUserButton) {
+    createUserButton.addEventListener('click', () => {
+      const modal = new bootstrap.Modal(document.getElementById('create-user-modal'));
+      modal.show();
+    });
+  }
+
+  // Event listener para formulario de crear usuario
+  if (createUserForm) {
+    createUserForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const userString = localStorage.getItem('user');
+      const user = JSON.parse(userString);
+
+      const newUser = {
+        nombre_completo: document.getElementById('create-nombre_completo').value,
+        identificacion: document.getElementById('create-identificacion').value,
+        correo: document.getElementById('create-correo').value,
+        pass_hash: document.getElementById('create-pass_hash').value,
+        telefono: document.getElementById('create-telefono').value,
+        tipo_contrato: document.getElementById('create-tipo_contrato').value,
+        id_rol: parseInt(document.getElementById('create-id_rol').value),
+        estado: true,
+        cod_centro: user.cod_centro
+      };
+
+      try {
+        await userService.createUser(newUser);
+        bootstrap.Modal.getInstance(document.getElementById('create-user-modal')).hide();
+        alert('Usuario creado exitosamente');
+        await reloadUsersData();
+      } catch (error) {
+        alert(error?.message || 'Error al crear usuario');
+        console.error('Error creando usuario:', error);
+      }
+    });
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -461,3 +471,4 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 export { init };
+
