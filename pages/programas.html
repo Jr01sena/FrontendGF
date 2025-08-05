@@ -1,4 +1,3 @@
-
 <main class="main-content position-relative max-height-vh-100 h-100 border-radius-lg">
   <!-- Contenedor para alertas flotantes -->
   <div id="alert-container" class="alert-container position-fixed top-0 end-0 p-3" style="z-index: 1100;"></div>
@@ -36,7 +35,7 @@
 
           <div class="card-body px-0 pb-2">
             <div class="table-responsive p-0">
-              <table class="table align-items-center mb-0">
+              <table class="table align-items-center mb-0 table-striped-custom">
                 <thead>
                   <tr>
                     <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Nombre Programa</th>
@@ -48,7 +47,7 @@
                   </tr>
                 </thead>
                 <tbody id="programas-table-body">
-                  <!-- JS renderiza aquí -->
+
                 </tbody>
               </table>
               <div class="d-flex justify-content-center align-items-center mt-3">
@@ -60,30 +59,125 @@
       </div>
     </div>
   </div>
-  <!-- Modal edición de programa -->
-  <div class="modal fade" id="edit-programa-modal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-      <form id="edit-programa-form" class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Editar Horas del Programa</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+
+  <div class="modal fade" id="edit-programa-modal" tabindex="-1" aria-labelledby="editProgramaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content shadow-lg border-0">
+        <div class="modal-header bg-success bg-gradient text-white rounded-top">
+          <h5 class="modal-title" id="editProgramaLabel">
+            <i class="bi bi-pencil-square me-2"></i>Editar Horas del Programa
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
         </div>
-        <div class="modal-body">
+        <form id="edit-programa-form" class="p-3">
           <div class="mb-3">
-            <label for="edit-horas-lectivas" class="form-label">Horas Lectivas</label>
-            <input type="number" class="form-control" id="edit-horas-lectivas" min="1" required>
+            <label for="edit-horas-lectivas" class="form-label fw-semibold">Horas Lectivas</label>
+            <input type="number" class="form-control" id="edit-horas-lectivas" min="0" required>
           </div>
           <div class="mb-3">
-            <label for="edit-horas-productivas" class="form-label">Horas Productivas</label>
-            <input type="number" class="form-control" id="edit-horas-productivas" min="1" required>
+            <label for="edit-horas-productivas" class="form-label fw-semibold">Horas Productivas</label>
+            <input type="number" class="form-control" id="edit-horas-productivas" min="0" required>
           </div>
-          <input type="hidden" id="edit-id-programa">
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-        </div>
-      </form>
+          <div class="d-flex justify-content-end gap-2 mt-4">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-success px-4">Guardar Cambios</button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
+
+  <div class="alert alert-light border mb-3 py-2 px-3" id="edit-programa-nombre" style="font-size:1.1rem;">
+    <i class="bi bi-award text-success me-2"></i>
+    <span id="nombre-programa-modal"></span>
+  </div>
 </main>
+
+<style>
+
+#edit-programa-modal .modal-content {
+  border-radius: 1rem;
+  border: none;
+}
+
+#edit-programa-modal .modal-header {
+  border-bottom: none;
+  border-radius: 1rem 1rem 0 0;
+}
+
+#edit-programa-modal .form-label {
+  color: #1e7e34;
+  font-size: 1.05rem;
+}
+
+#edit-programa-modal .form-control:focus {
+  border-color: #28a745;
+  box-shadow: 0 0 0 0.2rem rgba(40,167,69,.15);
+}
+
+
+#paginador {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 2rem 0 1rem 0;
+  gap: 0.25rem;
+}
+
+#paginador .btn {
+  min-width: 38px;
+  min-height: 38px;
+  font-size: 1rem;
+  transition: box-shadow 0.2s, background 0.2s, color 0.2s;
+}
+
+#paginador .btn-success {
+  box-shadow: 0 2px 8px 0 rgba(40,167,69,0.10);
+  font-weight: bold;
+}
+
+#paginador .btn-outline-success:hover:not(:disabled) {
+  background: #e6fcf5;
+  color: #1e7e34;
+  border-color: #28a745;
+}
+
+#paginador .btn:disabled, #paginador .btn.disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+#paginador .text-muted {
+  font-size: 1.2rem;
+  font-weight: bold;
+  opacity: 0.6;
+}
+
+
+#programas-table-body .btn {
+  min-width: 90px;              /* Más compacto */
+  font-weight: 500;
+  border-radius: 1.5rem;        /* Menos redondeado */
+  padding: 0.35rem 1rem;        
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4em;
+  font-size: 0.97rem;
+  box-shadow: 0 2px 8px 0 rgba(40,167,69,0.03);
+  transition: box-shadow 0.2s, background 0.2s, color 0.2s;
+}
+
+#programas-table-body .d-flex {
+  gap: 0.5rem !important;      
+}
+
+#programas-table-body .btn i {
+  font-size: 1em;
+  margin-right: 0.3em;
+}
+
+.table-striped-custom tbody tr:nth-of-type(even) {
+  background-color: #e6fcf5 !important; /* Verde clarito */
+}
+</style>

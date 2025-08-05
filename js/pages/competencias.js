@@ -61,8 +61,8 @@ const renderizarCompetencias = () => {
       <td>${c.nombre_competencia}</td>
       <td>${c.horas !== null && c.horas !== undefined ? c.horas : '-'}</td>
       <td class="text-end">
-        <button class="btn btn-sm btn-secondary btn-ver-resultados" data-cod="${c.cod_competencia}">
-          Ver Resultados
+        <button class="btn btn-sm btn-outline-success d-flex align-items-center justify-content-center rounded-pill fw-semibold btn-ver-resultados" data-cod="${c.cod_competencia}">
+          <i class="bi bi-bar-chart-line"></i> Ver Resultados
         </button>
       </td>
     `;
@@ -115,23 +115,28 @@ const renderizarPaginador = () => {
 
   const crearItem = (label, page, disabled = false, active = false) => {
     const li = document.createElement("li");
-    li.className = `page-item ${disabled ? "disabled" : ""} ${active ? "active" : ""}`;
-    
-    const a = document.createElement("a");
-    a.className = "page-link";
-    a.href = "#";
-    a.textContent = label;
-    
-    a.addEventListener("click", (e) => {
+    li.className = "page-item";
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.innerHTML = label;
+    btn.className = `btn btn-sm rounded-pill mx-1 fw-semibold ${
+      active
+        ? "btn-success text-white shadow border border-2 border-success"
+        : "btn-outline-success"
+    }`;
+    btn.disabled = disabled || active;
+
+    btn.addEventListener("click", (e) => {
       e.preventDefault();
-      if (!disabled && currentPage !== page) {
+      if (!disabled && !active && currentPage !== page) {
         currentPage = page;
         renderizarCompetencias();
         renderizarPaginador();
       }
     });
 
-    li.appendChild(a);
+    li.appendChild(btn);
     return li;
   };
 

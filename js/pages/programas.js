@@ -48,22 +48,25 @@ const renderizarTabla = (programas) => {
       <td>${p.horas_lectivas}</td>
       <td>${p.horas_productivas}</td>
       <td class="px-0 text-end">
-        <button 
-          class="btn btn-sm btn-success editar-btn"
-          data-cod="${p.cod_programa}"
-          data-version="${p.la_version}"
-          data-lectivas="${p.horas_lectivas}"
-          data-productivas="${p.horas_productivas}"
-        >
-          Editar
-        </button>
-        <button 
-          class="btn btn-sm btn-secondary ver-competencias-btn ms-1"
-          data-cod="${p.cod_programa}"
-          data-version="${p.la_version}"
-        >
-          Ver Competencias
-        </button>
+        <div class="d-flex justify-content-end gap-2">
+          <button 
+            class="btn btn-sm btn-outline-success editar-btn d-flex align-items-center gap-1"
+            data-cod="${p.cod_programa}"
+            data-version="${p.la_version}"
+            data-lectivas="${p.horas_lectivas}"
+            data-productivas="${p.horas_productivas}"
+            data-nombre="${p.nombre.replace(/"/g, '&quot;')}"
+          >
+            <i class="bi bi-pencil-square"></i> Editar
+          </button>
+          <button 
+            class="btn btn-sm btn-outline-secondary ver-competencias-btn d-flex align-items-center gap-1"
+            data-cod="${p.cod_programa}"
+            data-version="${p.la_version}"
+          >
+            <i class="bi bi-list-check"></i> Ver Competencias
+          </button>
+        </div>
       </td>
     `;
     tbody.appendChild(fila);
@@ -72,40 +75,43 @@ const renderizarTabla = (programas) => {
 
   // Agrega el listener a cada botón de editar
   document.querySelectorAll(".editar-btn").forEach((btn) => {
-        btn.addEventListener("click", (e) => {
-        const cod = btn.getAttribute("data-cod");
-        const version = btn.getAttribute("data-version");
-        const lectivas = btn.getAttribute("data-lectivas");
-        const productivas = btn.getAttribute("data-productivas");
+    btn.addEventListener("click", (e) => {
+      const cod = btn.getAttribute("data-cod");
+      const version = btn.getAttribute("data-version");
+      const lectivas = btn.getAttribute("data-lectivas");
+      const productivas = btn.getAttribute("data-productivas");
+      const nombre = btn.getAttribute("data-nombre");
 
-        // Llenar los inputs del modal
-        document.getElementById("edit-horas-lectivas").value = lectivas;
-        document.getElementById("edit-horas-productivas").value = productivas;
+      // Llenar los inputs del modal
+      document.getElementById("edit-horas-lectivas").value = lectivas;
+      document.getElementById("edit-horas-productivas").value = productivas;
 
-        // Guardar los IDs en dataset del formulario
-        const form = document.getElementById("edit-programa-form");
-        form.dataset.codPrograma = cod;
-        form.dataset.laVersion = version;
+      // Guardar los IDs en dataset del formulario
+      const form = document.getElementById("edit-programa-form");
+      form.dataset.codPrograma = cod;
+      form.dataset.laVersion = version;
 
-        // Mostrar el modal
-        const modal = new bootstrap.Modal(document.getElementById("edit-programa-modal"));
-        modal.show();
-        });
+      // Mostrar el modal
+      const modal = new bootstrap.Modal(document.getElementById("edit-programa-modal"));
+      modal.show();
+
+      document.getElementById("nombre-programa-modal").textContent = nombre;
     });
+  });
 
-    document.querySelectorAll(".ver-competencias-btn").forEach((btn) => {
-        btn.addEventListener("click", () => {
-        const cod = btn.getAttribute("data-cod");
-        const version = btn.getAttribute("data-version");
+  document.querySelectorAll(".ver-competencias-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const cod = btn.getAttribute("data-cod");
+      const version = btn.getAttribute("data-version");
 
-        // Guardar datos en localStorage
-        localStorage.setItem("cod_programa", cod);
-        localStorage.setItem("la_version", version);
+      // Guardar datos en localStorage
+      localStorage.setItem("cod_programa", cod);
+      localStorage.setItem("la_version", version);
 
-        // Navegar a la vista de competencias
-        loadContent("competencias"); // ← función global en main.js
-        });
+      // Navegar a la vista de competencias
+      loadContent("competencias"); // ← función global en main.js
     });
+  });
 
 };
 
@@ -119,7 +125,7 @@ const renderizarPaginador = () => {
 
   const btnAnterior = document.createElement("button");
   btnAnterior.textContent = "Anterior";
-  btnAnterior.className = "btn btn-sm btn-outline-secondary mx-1";
+  btnAnterior.className = "btn btn-sm btn-outline-success rounded-pill mx-1";
   btnAnterior.disabled = modoBusqueda || currentPage === 1;
   btnAnterior.addEventListener("click", () => {
     if (!modoBusqueda && currentPage > 1) {
@@ -148,7 +154,7 @@ const renderizarPaginador = () => {
 
   const btnSiguiente = document.createElement("button");
   btnSiguiente.textContent = "Siguiente";
-  btnSiguiente.className = "btn btn-sm btn-outline-secondary mx-1";
+  btnSiguiente.className = "btn btn-sm btn-outline-success rounded-pill mx-1";
   btnSiguiente.disabled = modoBusqueda || currentPage === totalPages;
   btnSiguiente.addEventListener("click", () => {
     if (!modoBusqueda && currentPage < totalPages) {
@@ -166,10 +172,14 @@ const renderizarPaginador = () => {
 function crearBotonPagina(num) {
   const btn = document.createElement("button");
   btn.textContent = num;
-  btn.className = `btn btn-sm ${num === currentPage ? "btn-primary" : "btn-outline-primary"} mx-1`;
-  btn.disabled = modoBusqueda; // ← desactiva en búsqueda si no hay paginación real
+  btn.className = `btn btn-sm fw-semibold rounded-pill mx-1 ${
+    num === currentPage
+      ? "btn-success text-white shadow border border-2 border-success"
+      : "btn-outline-success"
+  }`;
+  btn.disabled = modoBusqueda || num === currentPage;
   btn.addEventListener("click", () => {
-    if (!modoBusqueda) {
+    if (!modoBusqueda && num !== currentPage) {
       currentPage = num;
       cargarProgramas();
     }
