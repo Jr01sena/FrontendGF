@@ -217,23 +217,13 @@ if (logoutButton) {
 // 📦 Carga inicial
 document.addEventListener('DOMContentLoaded', () => {
   const user = JSON.parse(localStorage.getItem('user'));
-  const hash = location.hash?.replace('#', '') || null;
 
-  console.log('👤 Usuario detectado:', user);
-  console.log('🔗 Hash actual:', hash);
-
-  if (hash) {
-    loadContent(hash);
-    return;
-  }
-
+  // Forzamos siempre el redireccionamiento según el rol
   if (user?.id_rol === 3) {
-    // Instructores van directo al calendario
-    history.replaceState(null, '', '#calendario');
+    window.location.hash = '#calendario';
     loadContent('calendario');
   } else {
-    // Otros usuarios ven dashboard por defecto
-    history.replaceState(null, '', '#dashboard');
+    window.location.hash = '#dashboard';
     loadContent('dashboard');
   }
 });
