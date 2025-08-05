@@ -589,22 +589,29 @@ function canEditProgramacion(programacion) {
 
 function setupModalAlertReset() {
     const nuevaModal = document.getElementById('nueva-programacion-modal');
-    const nuevaError = document.getElementById('nueva-modal-error');
     const modal = document.getElementById('programacion-modal');
-    const error = document.getElementById('modal-error');
 
     nuevaModal.addEventListener('hidden.bs.modal', () => {
-        nuevaError.classList.add('d-none');
-        nuevaError.style.display = 'none'; // 🧼 Limpieza total
-        document.getElementById('nueva-modal-error-text').textContent = '';
+        const nuevaError = document.getElementById('nueva-modal-error');
+        const nuevaErrorText = document.getElementById('nueva-modal-error-text');
+        if (nuevaError) {
+            nuevaError.classList.add('d-none');
+            nuevaError.style.display = 'none'; // <- clave
+        }
+        if (nuevaErrorText) nuevaErrorText.innerText = '';
     });
 
     modal.addEventListener('hidden.bs.modal', () => {
-        error.classList.add('d-none');
-        error.style.display = 'none'; // 🧼 Limpieza total
-        document.getElementById('modal-error-text').textContent = '';
+        const error = document.getElementById('modal-error');
+        const errorText = document.getElementById('modal-error-text');
+        if (error) {
+            error.classList.add('d-none');
+            error.style.display = 'none'; // <- clave
+        }
+        if (errorText) errorText.innerText = '';
     });
 }
+
 
 
 
@@ -653,14 +660,13 @@ function showModalContent() {
 function showModalError(message) {
     const errorDiv = document.getElementById('modal-error');
     const errorText = document.getElementById('modal-error-text');
-
+    
     if (errorDiv && errorText) {
         errorText.innerText = message;
         errorDiv.classList.remove('d-none');
-        errorDiv.style.display = 'block'; // 🔑 Este es el truco clave
+        errorDiv.style.display = 'block'; // <-- Forzar visibilidad
     }
 }
-
 
 function showNuevaModalError(message) {
     const errorDiv = document.getElementById('nueva-modal-error');
@@ -669,9 +675,10 @@ function showNuevaModalError(message) {
     if (errorDiv && errorText) {
         errorText.innerText = message;
         errorDiv.classList.remove('d-none');
-        errorDiv.style.display = 'block'; // 🔑 Fuerza visibilidad por si Bootstrap interfiere
+        errorDiv.style.display = 'block'; // <-- Forzar visibilidad
     }
 }
+
 
 
 
