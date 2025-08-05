@@ -356,43 +356,52 @@ function createProgramacionEvent(programacion) {
 function createDayElement(date, currentMonth, today, programaciones) {
     const dayDiv = document.createElement('div');
     dayDiv.className = 'calendar-day';
-    
-    // Clases adicionales
+
     if (date.getMonth() !== currentMonth) {
         dayDiv.classList.add('other-month');
     }
-    
+
     if (isSameDay(date, today)) {
         dayDiv.classList.add('today');
     }
-    
-    // Número del día
+
     const dayNumber = document.createElement('div');
     dayNumber.className = 'day-number';
     dayNumber.textContent = date.getDate();
     dayDiv.appendChild(dayNumber);
-    
-    // Programaciones del día
-    const dayProgramaciones = programaciones.filter(prog => 
-        isSameDay(parseLocalDate(prog.fecha_programada), date)
-    );
-    
-    dayProgramaciones.forEach(prog => {
-        const eventBtn = createProgramacionEvent(prog);  // ← Ya agrega los datasets internamente
-        dayDiv.appendChild(eventBtn);
-    });
 
+    // Festivo o domingo
     const isDomingo = date.getDay() === 0;
     const isFestivo = diasFestivos.includes(formatDateForAPI(date));
 
     if (isDomingo || isFestivo) {
-        dayDiv.classList.add('dia-bloqueado');
-        dayDiv.classList.add('disabled');
+        dayDiv.classList.add('dia-bloqueado', 'disabled');
         dayDiv.title = isDomingo ? 'Domingo no programable' : 'Festivo no programable';
     }
-    
+
+    // Programaciones del día
+    const dayProgramaciones = programaciones.filter(prog =>
+        isSameDay(parseLocalDate(prog.fecha_programada), date)
+    );
+
+    dayProgramaciones.forEach(prog => {
+        const eventBtn = createProgramacionEvent(prog);
+        dayDiv.appendChild(eventBtn);
+    });
+
+    // 👉 CLICK EN CASILLA para nueva programación, solo si es habilitado
+    if (!isDomingo && !isFestivo) {
+        dayDiv.addEventListener('click', (e) => {
+            // 🛑 Evitar conflicto si se hace clic sobre un botón interno
+            if (e.target.closest('.programacion-event')) return;
+
+            openNuevaProgramacionModal(date);
+        });
+    }
+
     return dayDiv;
 }
+
 
 
 
