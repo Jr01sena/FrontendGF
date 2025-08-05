@@ -1,4 +1,5 @@
 import { userService } from '../api/user.service.js';
+import { grupoService } from '../api/grupos.service.js';
 
 function init(){
     var ctx = document.getElementById("chart-bars").getContext("2d");
@@ -542,7 +543,6 @@ export { init };
 // FIN MODULO GRAFICA CAMILO
 
 // js/pages/dashboard.js
-import { grupoService } from '../api/grupos.service.js';
 
 const elements = {
     filtroCentro: document.getElementById('filtroCentro'),
