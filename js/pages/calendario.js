@@ -589,31 +589,26 @@ function canEditProgramacion(programacion) {
 
 function setupModalAlertReset() {
     const nuevaModal = document.getElementById('nueva-programacion-modal');
-    const modal = document.getElementById('programacion-modal');
+    const editarModal = document.getElementById('programacion-modal');
 
-    nuevaModal.addEventListener('hidden.bs.modal', () => {
-        const nuevaError = document.getElementById('nueva-modal-error');
-        const nuevaErrorText = document.getElementById('nueva-modal-error-text');
-        if (nuevaError) {
-            nuevaError.classList.add('d-none');
-            nuevaError.style.display = 'none'; // <- clave
-        }
-        if (nuevaErrorText) nuevaErrorText.innerText = '';
-    });
+    if (nuevaModal) {
+        nuevaModal.addEventListener('shown.bs.modal', () => {
+            hideNuevaModalError();
+        });
+        nuevaModal.addEventListener('hidden.bs.modal', () => {
+            hideNuevaModalError();
+        });
+    }
 
-    modal.addEventListener('hidden.bs.modal', () => {
-        const error = document.getElementById('modal-error');
-        const errorText = document.getElementById('modal-error-text');
-        if (error) {
-            error.classList.add('d-none');
-            error.style.display = 'none'; // <- clave
-        }
-        if (errorText) errorText.innerText = '';
-    });
+    if (editarModal) {
+        editarModal.addEventListener('shown.bs.modal', () => {
+            hideModalError();
+        });
+        editarModal.addEventListener('hidden.bs.modal', () => {
+            hideModalError();
+        });
+    }
 }
-
-
-
 
 
 // --- FUNCIONES DE ESTADOS UI ---
@@ -657,15 +652,8 @@ function showModalContent() {
     document.getElementById('modal-content').classList.remove('d-none');
 }
 
-function showModalError(message) {
-    const errorDiv = document.getElementById('modal-error');
-    const errorText = document.getElementById('modal-error-text');
-    
-    if (errorDiv && errorText) {
-        errorText.innerText = message;
-        errorDiv.classList.remove('d-none');
-        errorDiv.style.display = 'block'; // <-- Forzar visibilidad
-    }
+function hideModalContent() {
+    document.getElementById('modal-content').classList.add('d-none');
 }
 
 function showNuevaModalError(message) {
@@ -673,24 +661,25 @@ function showNuevaModalError(message) {
     const errorText = document.getElementById('nueva-modal-error-text');
 
     if (errorDiv && errorText) {
-        errorText.innerText = message;
-        errorDiv.style.display = 'block'; // ✅ mostrar sin clases
+        errorText.textContent = message;
+        errorDiv.classList.remove('d-none');
     }
 }
-
-
-
-function hideModalContent() {
-    document.getElementById('modal-content').classList.add('d-none');
-}
-
-
 
 function hideNuevaModalError() {
     const errorDiv = document.getElementById('nueva-modal-error');
     if (errorDiv) errorDiv.classList.add('d-none');
 }
 
+function showModalError(message) {
+    const errorDiv = document.getElementById('modal-error');
+    const errorText = document.getElementById('modal-error-text');
+
+    if (errorDiv && errorText) {
+        errorText.textContent = message;
+        errorDiv.classList.remove('d-none');
+    }
+}
 
 function hideModalError() {
     const errorDiv = document.getElementById('modal-error');
@@ -1299,17 +1288,6 @@ function resetNuevaProgramacionForm() {
 document.addEventListener('DOMContentLoaded', () => {
     const nuevaModal = document.getElementById('nueva-programacion-modal');
     const editarModal = document.getElementById('programacion-modal');
-    document.getElementById('nueva-programacion-modal')
-      .addEventListener('hidden.bs.modal', () => {
-        const errorDiv = document.getElementById('nueva-modal-error');
-        const errorText = document.getElementById('nueva-modal-error-text');
-
-        if (errorDiv && errorText) {
-            errorDiv.style.display = 'none';
-            errorText.innerText = '';
-        }
-    });
-
 
     if (nuevaModal) {
         nuevaModal.addEventListener('hidden.bs.modal', () => {
