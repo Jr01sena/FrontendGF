@@ -976,8 +976,7 @@ function resetEditMode() {
 }
 
 
-
-async function openNuevaProgramacionModal() {
+async function openNuevaProgramacionModal(selectedDate = null) {
     console.log('➕ Abriendo modal nueva programación...');
     
     try {
@@ -988,17 +987,18 @@ async function openNuevaProgramacionModal() {
         
         // Cargar fichas del instructor
         await loadFichasForNewProgramacion();
-        
-        // Establecer fecha por defecto
-        const today = new Date();
-        document.getElementById('nueva-fecha').value = formatDateForAPI(today);
-        
+
+        // Establecer la fecha (usamos la seleccionada o hoy si no hay)
+        const fecha = selectedDate instanceof Date ? selectedDate : new Date();
+        const fechaFormateada = formatDateForAPI(fecha);
+        document.getElementById('nueva-fecha').value = fechaFormateada;
+
         const fechaInput = document.getElementById('nueva-fecha');
         fechaInput.addEventListener('input', (e) => {
-            const fecha = e.target.value;
-            const fechaDate = parseLocalDate(fecha);
+            const nuevaFecha = e.target.value;
+            const fechaDate = parseLocalDate(nuevaFecha);
             const esDomingo = fechaDate.getDay() === 0;
-            const esFestivo = diasFestivos.includes(fecha);
+            const esFestivo = diasFestivos.includes(nuevaFecha);
 
             if (esDomingo || esFestivo) {
                 showNuevaModalError('No se puede programar en domingos ni festivos.');
@@ -1009,12 +1009,13 @@ async function openNuevaProgramacionModal() {
         });
 
         modal.show();
-        
+
     } catch (error) {
         console.error('❌ Error al abrir modal nueva programación:', error);
         showNuevaModalError(error.message || 'Error al cargar el formulario');
     }
 }
+
 
 
 async function createNuevaProgramacion() {
