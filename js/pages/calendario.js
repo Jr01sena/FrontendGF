@@ -589,26 +589,21 @@ function canEditProgramacion(programacion) {
 
 function setupModalAlertReset() {
     const nuevaModal = document.getElementById('nueva-programacion-modal');
-    const editarModal = document.getElementById('programacion-modal');
+    const nuevaError = document.getElementById('nueva-modal-error');
+    const modal = document.getElementById('programacion-modal');
+    const error = document.getElementById('modal-error');
 
-    if (nuevaModal) {
-        nuevaModal.addEventListener('shown.bs.modal', () => {
-            hideNuevaModalError();
-        });
-        nuevaModal.addEventListener('hidden.bs.modal', () => {
-            hideNuevaModalError();
-        });
-    }
+    nuevaModal.addEventListener('hidden.bs.modal', () => {
+        nuevaError.classList.add('d-none');
+        nuevaError.querySelector('#nueva-modal-error-text').textContent = '';
+    });
 
-    if (editarModal) {
-        editarModal.addEventListener('shown.bs.modal', () => {
-            hideModalError();
-        });
-        editarModal.addEventListener('hidden.bs.modal', () => {
-            hideModalError();
-        });
-    }
+    modal.addEventListener('hidden.bs.modal', () => {
+        error.classList.add('d-none');
+        error.querySelector('#modal-error-text').textContent = '';
+    });
 }
+
 
 
 // --- FUNCIONES DE ESTADOS UI ---
@@ -652,34 +647,36 @@ function showModalContent() {
     document.getElementById('modal-content').classList.remove('d-none');
 }
 
-function hideModalContent() {
-    document.getElementById('modal-content').classList.add('d-none');
+function showModalError(message) {
+    const errorDiv = document.getElementById('modal-error');
+    const errorText = document.getElementById('modal-error-text');
+    if (errorDiv && errorText) {
+        errorText.textContent = message;
+        errorDiv.classList.remove('d-none'); // 💡 Esto asegura visibilidad
+    }
 }
 
 function showNuevaModalError(message) {
     const errorDiv = document.getElementById('nueva-modal-error');
     const errorText = document.getElementById('nueva-modal-error-text');
-
     if (errorDiv && errorText) {
         errorText.textContent = message;
-        errorDiv.classList.remove('d-none');
+        errorDiv.classList.remove('d-none'); // 💡 También aquí
     }
 }
+
+
+function hideModalContent() {
+    document.getElementById('modal-content').classList.add('d-none');
+}
+
+
 
 function hideNuevaModalError() {
     const errorDiv = document.getElementById('nueva-modal-error');
     if (errorDiv) errorDiv.classList.add('d-none');
 }
 
-function showModalError(message) {
-    const errorDiv = document.getElementById('modal-error');
-    const errorText = document.getElementById('modal-error-text');
-
-    if (errorDiv && errorText) {
-        errorText.textContent = message;
-        errorDiv.classList.remove('d-none');
-    }
-}
 
 function hideModalError() {
     const errorDiv = document.getElementById('modal-error');
