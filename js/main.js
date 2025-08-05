@@ -216,23 +216,28 @@ if (logoutButton) {
 // Carga inicial del dashboard
 document.addEventListener('DOMContentLoaded', () => {
   const user = JSON.parse(localStorage.getItem('user'));
+  console.log('👤 Usuario detectado:', user);
 
-  // Si ya hay un módulo cargado desde la URL o sesión, no sobreescribas
   const currentPage = location.hash?.replace('#', '') || null;
+  console.log('🔍 Página desde hash:', currentPage);
+
   if (currentPage) {
+    console.log('📄 Cargando desde hash:', currentPage);
     loadContent(currentPage);
     return;
   }
 
-  // Redirección condicional por rol
   if (user?.id_rol === 3) {
+    console.log('➡️ Redirigiendo a CALENDARIO por rol 3');
     loadContent('calendario');
     history.replaceState(null, '', '#calendario');
   } else {
+    console.log('➡️ Redirigiendo a DASHBOARD');
     loadContent('dashboard');
     history.replaceState(null, '', '#dashboard');
   }
 });
+
 
 
 window.loadContent = loadContent;
