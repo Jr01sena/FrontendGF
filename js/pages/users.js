@@ -498,4 +498,4 @@ async function init() {
   }
 }
 
-export { init, cleanupModals };
+export { init };
