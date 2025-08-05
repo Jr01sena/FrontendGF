@@ -674,11 +674,9 @@ function showNuevaModalError(message) {
 
     if (errorDiv && errorText) {
         errorText.innerText = message;
-        errorDiv.classList.remove('d-none');
-        errorDiv.style.display = 'block'; // <-- Forzar visibilidad
+        errorDiv.style.display = 'block'; // ✅ mostrar sin clases
     }
 }
-
 
 
 
@@ -1301,6 +1299,17 @@ function resetNuevaProgramacionForm() {
 document.addEventListener('DOMContentLoaded', () => {
     const nuevaModal = document.getElementById('nueva-programacion-modal');
     const editarModal = document.getElementById('programacion-modal');
+    document.getElementById('nueva-programacion-modal')
+      .addEventListener('hidden.bs.modal', () => {
+        const errorDiv = document.getElementById('nueva-modal-error');
+        const errorText = document.getElementById('nueva-modal-error-text');
+
+        if (errorDiv && errorText) {
+            errorDiv.style.display = 'none';
+            errorText.innerText = '';
+        }
+    });
+
 
     if (nuevaModal) {
         nuevaModal.addEventListener('hidden.bs.modal', () => {
