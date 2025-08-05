@@ -215,14 +215,27 @@
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       const user = JSON.parse(localStorage.getItem('user'));
+
       if (user?.id_rol === 3) {
-        const userMenuItem = document.querySelector('[data-page="usuarios"]');
-        if (userMenuItem) {
-          userMenuItem.closest('.nav-item').style.display = 'none';
-        }
+        const pagesToHide = [
+          'dashboard',
+          'usuarios',
+          'centros',
+          'cargararchivos',
+          'grupos',
+          'metas'
+        ];
+
+        pagesToHide.forEach(page => {
+          const navItem = document.querySelector(`[data-page="${page}"]`);
+          if (navItem) {
+            navItem.closest('.nav-item').style.display = 'none';
+          }
+        });
       }
     });
   </script>
+
 
   <!-- ✅ Tom Select CSS -->
   <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
