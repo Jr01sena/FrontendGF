@@ -1,29 +1,13 @@
 import { userService } from '../api/user.service.js';
 
 let modalInstance = null; // Guardará la instancia del modal de Bootstrap
-let createModalInstance = null; // Guardará la instancia del modal de crear
-let originalMail = null; // Guardará el correo original para validación
+let originalMail = null;
 
-// Variables para el buscador
-let allUsers = []; // Guardará todos los usuarios cargados
-let filteredUsers = []; // Usuarios filtrados por la búsqueda
-
-// Función para limpiar modales problemáticos
-function cleanupModals() {
-  // Remover clase modal-open del body
-  document.body.classList.remove('modal-open');
-  document.body.style.removeProperty('padding-right');
-  
-  // Remover cualquier backdrop residual
-  const backdrops = document.querySelectorAll('.modal-backdrop');
-  backdrops.forEach(backdrop => backdrop.remove());
-  
-  // Resetear el overflow del body
-  document.body.style.overflow = '';
-}
-
-// Hacer la función disponible globalmente
-window.cleanupModals = cleanupModals;
+// Variables unificadas para manejo de usuarios
+let allUsers = []; // Lista completa de usuarios cargados
+let filteredUsers = []; // Usuarios filtrados por búsqueda
+let currentPage = 1;
+const pageSize = 5; // Usuarios por página
 
 // --- FUNCIONES DE BÚSQUEDA ---
 
@@ -40,16 +24,25 @@ function filterUsers(searchTerm) {
     );
   }
   
+  // Resetear a la primera página cuando se filtra
+  currentPage = 1;
+  
   renderUsers(filteredUsers);
   updateSearchResultsCount(searchTerm, filteredUsers.length, allUsers.length);
 }
 
-function renderUsers(users) {
+function renderUsers(users = filteredUsers) {
   const tableBody = document.getElementById('users-table-body');
   if (!tableBody) return;
 
-  if (users.length > 0) {
-    tableBody.innerHTML = users.map(createUserRow).join('');
+  // Aplicar paginación a los usuarios filtrados
+  const totalPages = Math.ceil(users.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedUsers = users.slice(startIndex, endIndex);
+
+  if (paginatedUsers.length > 0) {
+    tableBody.innerHTML = paginatedUsers.map(createUserRow).join('');
   } else {
     const searchTerm = document.getElementById('user-search')?.value || '';
     if (searchTerm.trim()) {
@@ -68,6 +61,9 @@ function renderUsers(users) {
       tableBody.innerHTML = '<tr><td colspan="6" class="text-center">No se encontraron usuarios.</td></tr>';
     }
   }
+
+  // Actualizar paginador
+  renderPagination(users.length);
 }
 
 function updateSearchResultsCount(searchTerm, filteredCount, totalCount) {
@@ -82,6 +78,65 @@ function updateSearchResultsCount(searchTerm, filteredCount, totalCount) {
   }
 }
 
+function renderPagination(totalItems) {
+  const totalPages = Math.ceil(totalItems / pageSize);
+  const paginador = document.getElementById("paginador-usuarios");
+  
+  if (!paginador) return;
+  
+  paginador.innerHTML = "";
+
+  // No mostrar paginador si solo hay una página o menos
+  if (totalPages <= 1) return;
+
+  const ul = document.createElement("ul");
+  ul.className = "pagination justify-content-center my-3";
+
+  const createPageItem = (label, page, disabled = false, active = false) => {
+    const li = document.createElement("li");
+    li.className = `page-item ${disabled ? "disabled" : ""} ${active ? "active" : ""}`;
+
+    const a = document.createElement("a");
+    a.className = "page-link";
+    a.href = "#";
+    a.textContent = label;
+
+    a.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (!disabled && currentPage !== page) {
+        currentPage = page;
+        renderUsers(filteredUsers);
+      }
+    });
+
+    li.appendChild(a);
+    return li;
+  };
+
+  // Botón anterior
+  ul.appendChild(createPageItem("«", currentPage - 1, currentPage === 1));
+
+  // Calcular rango de páginas a mostrar
+  let startPage = Math.max(1, currentPage - 2);
+  let endPage = Math.min(totalPages, currentPage + 2);
+
+  if (currentPage <= 3) {
+    endPage = Math.min(5, totalPages);
+  } else if (currentPage >= totalPages - 2) {
+    startPage = Math.max(1, totalPages - 4);
+  }
+
+  // Números de página
+  for (let i = startPage; i <= endPage; i++) {
+    ul.appendChild(createPageItem(i, i, false, i === currentPage));
+  }
+
+  // Botón siguiente
+  ul.appendChild(createPageItem("»", currentPage + 1, currentPage === totalPages));
+
+  paginador.appendChild(ul);
+}
+
 function clearSearch() {
   const searchInput = document.getElementById('user-search');
   if (searchInput) {
@@ -91,7 +146,6 @@ function clearSearch() {
 }
 
 // --- FUNCIONES DE VISTA (Generación de HTML) ---
-
 function createUserRow(user) {
   const statusBadge = user.estado
     ? `<span class="badge bg-success">Activo</span>`
@@ -99,96 +153,73 @@ function createUserRow(user) {
 
   const userId = user.id_usuario;
 
+  // Extraer iniciales de nombre_completo
+  let iniciales = "U";
+  if (user?.nombre_completo) {
+    const partes = user.nombre_completo.trim().split(" ");
+    if (partes.length >= 2) {
+      iniciales = partes[0][0] + partes[1][0];
+    } else {
+      iniciales = partes[0][0];
+    }
+  }
+
   return `
     <tr>
-    <td class="align-middle">
-      <div class="d-flex px-2 py-1">
-        <div>
-          <img src="../assets/img/team-2.jpg" class="avatar avatar-sm me-3 border-radius-lg" alt="user1">
+      <td class="align-middle">
+        <div class="d-flex px-2 py-1">
+          <div>
+            <div class="avatar bg-gradient-dark text-white fw-bold rounded-circle d-flex align-items-center justify-content-center me-3"
+                 style="width: 36px; height: 36px;">
+              ${iniciales.toUpperCase()}
+            </div>
+          </div>
+          <div class="d-flex flex-column justify-content-center">
+            <h6 class="mb-0 text-sm">${user.nombre_completo}</h6>
+            <p class="text-xs text-secondary mb-0">${user.identificacion}</p>
+          </div>
         </div>
-        <div class="d-flex flex-column justify-content-center">
-          <h6 class="mb-0 text-sm">${user.nombre_completo}</h6>
-          <p class="text-xs text-secondary mb-0">${user.identificacion}</p>
+      </td>
+      <td class="align-middle">
+        <p class="text-xs font-weight-bold mb-0">${user.correo}</p>
+      </td>
+      <td class="text-center align-middle">
+        <p class="text-xs text-secondary mb-0">${user.telefono}</p>
+      </td>
+      <td class="px-0">
+        <div class="form-check form-switch ms-2 d-inline-block">
+          <input class="form-check-input user-status-switch" type="checkbox" role="switch" 
+                 id="switch-${userId}" data-user-id="${userId}" 
+                 ${user.estado ? 'checked' : ''}>
+          <label class="form-check-label" for="switch-${userId}">
+            ${user.estado ? 'Activo' : 'Inactivo'}
+          </label>
         </div>
-      </div>
-    </td>
-    <td class="align-middle">
-      <p class="text-xs font-weight-bold mb-0">${user.correo}</p>
-    </td>
-    <td class="text-center align-middle">
-      <p class="text-xs text-secondary mb-0">${user.telefono}</p>
-    </td>
-    <td class="text-center align-middle">
-      <div class="status-switch-container">
-        <input class="form-check-input user-status-switch" type="checkbox" role="switch" 
-               id="switch-${userId}" data-user-id="${userId}" 
-               ${user.estado ? 'checked' : ''}>
-        <label class="form-check-label text-xs" for="switch-${userId}">
-          ${user.estado ? 'Activo' : 'Inactivo'}
-        </label>
-      </div>
-    </td>
-    <td class="text-center align-middle">
-      <span class="text-xs font-weight-bold text-secondary badge badge-pill">${user.rol}</span>
-    </td>
-    <td class="text-center align-middle">
-      <button class="btn btn-sm btn-success btn-edit-user" data-user-id="${userId}">
-        <i class="material-symbols-rounded me-1">edit</i>
-        Editar
-      </button>
-    </td>
+      </td>
+      <td class="text-center align-middle">
+        <span class="text-xs font-weight-bold text-secondary badge badge-pill">${user.rol}</span>
+      </td>
+      <td class="text-center align-middle">
+        <button class="btn btn-sm btn-success btn-edit-user" data-user-id="${userId}">
+          Editar
+        </button>
+      </td>
     </tr>
   `;
 }
 
-// --- LÓGICA DE MODAL ---
 
-function openCreateModal() {
-  const createModalElement = document.getElementById('create-usuario-modal');
-  if (!createModalInstance) {
-    createModalInstance = new bootstrap.Modal(createModalElement, {
-      backdrop: 'static',
-      keyboard: false
-    });
-    
-    // Agregar event listeners para limpiar cuando se cierra
-    createModalElement.addEventListener('hidden.bs.modal', function () {
-      document.body.classList.remove('modal-open');
-      document.body.style.removeProperty('padding-right');
-      const backdrop = document.querySelector('.modal-backdrop');
-      if (backdrop) {
-        backdrop.remove();
-      }
-    });
-  }
-  
-  // Limpiar formulario
-  document.getElementById('create-user-form').reset();
-  createModalInstance.show();
-}
+// --- LÓGICA DE MODAL ---
 
 async function openEditModal(userId) {
   const modalElement = document.getElementById('edit-user-modal');
   if (!modalInstance) {
-    modalInstance = new bootstrap.Modal(modalElement, {
-      backdrop: 'static',
-      keyboard: false
-    });
-    
-    // Agregar event listeners para limpiar cuando se cierra
-    modalElement.addEventListener('hidden.bs.modal', function () {
-      document.body.classList.remove('modal-open');
-      document.body.style.removeProperty('padding-right');
-      const backdrop = document.querySelector('.modal-backdrop');
-      if (backdrop) {
-        backdrop.remove();
-      }
-    });
+    modalInstance = new bootstrap.Modal(modalElement);
   }
 
   try {
     const user = await userService.getUserById(userId);
-    originalMail = user.correo; // Guardamos el correo original para validación
+    originalMail = user.correo;
     document.getElementById('edit-user-id').value = user.id_usuario;
     document.getElementById('edit-nombre_completo').value = user.nombre_completo;
     document.getElementById('edit-correo').value = user.correo;
@@ -202,53 +233,6 @@ async function openEditModal(userId) {
 }
 
 // --- MANEJADORES DE EVENTOS ---
-
-async function handleCreateSubmit(event) {
-  event.preventDefault();
-  
-  const newUserData = {
-    nombre_completo: document.getElementById('create-nombre_completo').value,
-    identificacion: document.getElementById('create-identificacion').value,
-    id_rol: parseInt(document.getElementById('create-id_rol').value),
-    correo: document.getElementById('create-correo').value,
-    pass_hash: document.getElementById('create-pass_hash').value,
-    tipo_contrato: document.getElementById('create-tipo_contrato').value,
-    telefono: document.getElementById('create-telefono').value,
-    estado: true, // Siempre activo por defecto
-    cod_centro: parseInt(document.getElementById('create-cod_centro').value)
-  };
-
-  try {
-    await userService.createUser(newUserData);
-    
-    // Cerrar modal correctamente
-    if (createModalInstance) {
-      createModalInstance.hide();
-    }
-    
-    // Limpiar cualquier backdrop residual
-    setTimeout(() => {
-      document.body.classList.remove('modal-open');
-      document.body.style.removeProperty('padding-right');
-      const backdrops = document.querySelectorAll('.modal-backdrop');
-      backdrops.forEach(backdrop => backdrop.remove());
-    }, 300);
-    
-    alert('Usuario creado exitosamente');
-    
-    // Recargar datos y mantener búsqueda
-    await reloadUsersData();
-  } catch (error) {
-    console.error('Error al crear el usuario:', error);
-    if (error.message && error.message.includes('400')) {
-      alert('Correo ya registrado. Por favor usa otro correo.');
-    } else if (error.message && error.message.includes('401')) {
-      alert('No tienes permisos para realizar esta acción.');
-    } else {
-      alert('Error al crear el usuario. Por favor intenta nuevamente.');
-    }
-  }
-}
 
 async function handleUpdateSubmit(event) {
   event.preventDefault();
@@ -267,22 +251,8 @@ async function handleUpdateSubmit(event) {
 
   try {
     await userService.updateUser(userId, updatedData);
-    
-    // Cerrar modal correctamente
-    if (modalInstance) {
-      modalInstance.hide();
-    }
-    
-    // Limpiar cualquier backdrop residual
-    setTimeout(() => {
-      document.body.classList.remove('modal-open');
-      document.body.style.removeProperty('padding-right');
-      const backdrops = document.querySelectorAll('.modal-backdrop');
-      backdrops.forEach(backdrop => backdrop.remove());
-    }, 300);
-    
-    // Recargar datos y mantener búsqueda
-    await reloadUsersData();
+    modalInstance.hide();
+    await reloadUsersData(); // Usar reloadUsersData en lugar de init()
   } catch (error) {
     console.error(`Error al actualizar el usuario ${userId}:`, error);
     alert('No se pudo actualizar el usuario.');
@@ -290,13 +260,6 @@ async function handleUpdateSubmit(event) {
 }
 
 async function handleTableClick(event) {
-  // Manejador para el botón de crear
-  const createButton = event.target.closest('#btn-create-usuario');
-  if (createButton) {
-    openCreateModal();
-    return;
-  }
-
   // Manejador para el botón de editar
   const editButton = event.target.closest('.btn-edit-user');
   if (editButton) {
@@ -313,14 +276,12 @@ async function handleStatusSwitch(event) {
   const userId = switchElement.dataset.userId;
   const newStatus = switchElement.checked;
   const actionText = newStatus ? 'activar' : 'desactivar';
-
+  
   if (confirm(`¿Estás seguro de que deseas ${actionText} este usuario?`)) {
     try {
       await userService.deleteUser(userId); // Esta función maneja el cambio de estado
       alert(`El usuario ha sido ${newStatus ? 'activado' : 'desactivado'} exitosamente.`);
-      
-      // Recargar datos y mantener búsqueda
-      await reloadUsersData();
+      await reloadUsersData(); // Usar reloadUsersData en lugar de init()
     } catch (error) {
       console.error(`Error al ${actionText} el usuario ${userId}:`, error);
       alert(`No se pudo ${actionText} el usuario.`);
@@ -332,6 +293,39 @@ async function handleStatusSwitch(event) {
     switchElement.checked = !newStatus;
   }
 }
+
+document.getElementById('btn-open-create-user').addEventListener('click', () => {
+  const modal = new bootstrap.Modal(document.getElementById('create-user-modal'));
+  modal.show();
+});
+
+document.getElementById('create-user-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const userString = localStorage.getItem('user');
+  const user = JSON.parse(userString);
+
+  const newUser = {
+    nombre_completo: document.getElementById('create-nombre_completo').value,
+    identificacion: document.getElementById('create-identificacion').value,
+    correo: document.getElementById('create-correo').value,
+    pass_hash: document.getElementById('create-pass_hash').value,
+    telefono: document.getElementById('create-telefono').value,
+    tipo_contrato: document.getElementById('create-tipo_contrato').value,
+    id_rol: parseInt(document.getElementById('create-id_rol').value),
+    estado: true,
+    cod_centro: user.cod_centro
+  };
+
+  try {
+    await userService.createUser(newUser);
+    bootstrap.Modal.getInstance(document.getElementById('create-user-modal')).hide();
+    alert('Usuario creado exitosamente');
+    await reloadUsersData(); // Usar reloadUsersData en lugar de init()
+  } catch (error) {
+    alert(error?.message || 'Error al crear usuario');
+    console.error('Error creando usuario:', error);
+  }
+});
 
 // Función para recargar datos manteniendo la búsqueda activa
 async function reloadUsersData() {
@@ -370,126 +364,84 @@ function handleSearchKeydown(event) {
 
 // --- FUNCIÓN PRINCIPAL DE INICIALIZACIÓN ---
 
-function checkUserPermissions() {
-  const userString = localStorage.getItem('user');
-  if (!userString) {
-    console.warn('No se encontró información del usuario');
-    return false;
-  }
-  
-  const user = JSON.parse(userString);
-  const createButton = document.getElementById('btn-create-usuario');
-  const searchContainer = document.querySelector('.search-container');
-  
-  console.log(`Usuario actual: ${user.nombre_completo}, Rol: ${user.id_rol}`);
-  
-  // Solo mostrar botón de crear si es superadmin (rol 1)
-  if (user.id_rol !== 1) {
-    if (createButton) {
-      createButton.style.display = 'none';
-    }
-    console.log('Botón de crear usuario oculto - Usuario no es superadmin');
-  }
-  
-  // Ocultar buscador para usuarios con rol 3
-  if (user.id_rol === 3) {
-    if (searchContainer) {
-      searchContainer.style.display = 'none';
-    }
-    console.log('Buscador oculto - Usuario tiene rol 3');
-    return false;
-  }
-  
-  console.log('Usuario tiene permisos para ver el buscador');
-  return true;
-}
-
 async function init() {
-  // Verificar permisos del usuario
   const userString = localStorage.getItem('user');
-  const currentUser = userString ? JSON.parse(userString) : null;
-  
-  checkUserPermissions();
-  
+  const currentUser = JSON.parse(userString);
+
+  // Verificación de permisos
+  if (![1, 2].includes(currentUser?.id_rol)) {
+    const userSection = document.getElementById('user-management-section');
+    if (userSection) {
+      userSection.innerHTML = `
+        <div class="alert alert-warning text-center">
+          No tienes permiso para acceder al módulo de usuarios.
+        </div>
+      `;
+    }
+    return;
+  }
+
   const tableBody = document.getElementById('users-table-body');
   if (!tableBody) return;
-
+  
   tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Cargando usuarios...</td></tr>';
 
   try {
+    // Cargar usuarios una sola vez
     const users = await userService.getUsersByCentro();
     
-    // Guardar todos los usuarios y inicializar filtrados
+    // Inicializar arrays globales
     allUsers = users || [];
     filteredUsers = [...allUsers];
+    currentPage = 1;
     
-    // Renderizar usuarios
+    // Limpiar búsqueda anterior
+    const searchInput = document.getElementById('user-search');
+    if (searchInput) {
+      searchInput.value = '';
+    }
+    
+    // Renderizar usuarios con paginación
     if (allUsers.length > 0) {
       renderUsers(filteredUsers);
-      
-      // Limpiar búsqueda anterior si existe
-      const searchInput = document.getElementById('user-search');
-      if (searchInput) {
-        searchInput.value = '';
-      }
       updateSearchResultsCount('', filteredUsers.length, allUsers.length);
     } else {
       tableBody.innerHTML = '<tr><td colspan="6" class="text-center">No se encontraron usuarios.</td></tr>';
     }
+    
   } catch (error) {
     console.error('Error al obtener los usuarios:', error);
+    tableBody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Error al cargar los datos.</td></tr>`;
     
     // Limpiar arrays en caso de error
     allUsers = [];
     filteredUsers = [];
-    
-    // Si es un error de permisos, mostrar mensaje específico
-    if (error.message && error.message.includes('Acceso denegado')) {
-      tableBody.innerHTML = `
-        <tr>
-          <td colspan="6" class="text-center p-4">
-            <div class="alert alert-warning" role="alert">
-              <i class="material-symbols-rounded me-2">warning</i>
-              <strong>Acceso restringido:</strong> No tienes permisos para ver la lista de usuarios.
-              <br><small>Solo los administradores pueden acceder a esta función.</small>
-            </div>
-          </td>
-        </tr>
-      `;
-    } else {
-      tableBody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Error al cargar los datos.</td></tr>`;
-    }
   }
 
-  // Aplicamos el patrón remove/add para evitar listeners duplicados
+  // Configurar event listeners
+  setupEventListeners();
+}
+
+function setupEventListeners() {
+  const tableBody = document.getElementById('users-table-body');
   const editForm = document.getElementById('edit-user-form');
-  const createForm = document.getElementById('create-user-form');
-  const createButton = document.getElementById('btn-create-usuario');
   const searchInput = document.getElementById('user-search');
-  
+
   // Event listeners para tabla
-  tableBody.removeEventListener('click', handleTableClick);
-  tableBody.addEventListener('click', handleTableClick);
-  tableBody.removeEventListener('change', handleStatusSwitch);
-  tableBody.addEventListener('change', handleStatusSwitch);
-  
-  // Event listeners para formularios
+  if (tableBody) {
+    tableBody.removeEventListener('click', handleTableClick);
+    tableBody.addEventListener('click', handleTableClick);
+    tableBody.removeEventListener('change', handleStatusSwitch);
+    tableBody.addEventListener('change', handleStatusSwitch);
+  }
+
+  // Event listeners para formulario de edición
   if (editForm) {
     editForm.removeEventListener('submit', handleUpdateSubmit);
     editForm.addEventListener('submit', handleUpdateSubmit);
   }
-  if (createForm) {
-    createForm.removeEventListener('submit', handleCreateSubmit);
-    createForm.addEventListener('submit', handleCreateSubmit);
-  }
-  
-  // Event listener para botón crear
-  if (createButton) {
-    createButton.removeEventListener('click', openCreateModal);
-    createButton.addEventListener('click', openCreateModal);
-  }
-  
-  // Event listeners para búsqueda (solo si el buscador está visible)
+
+  // Event listeners para búsqueda
   if (searchInput && searchInput.offsetParent !== null) {
     searchInput.removeEventListener('input', handleSearchInput);
     searchInput.addEventListener('input', handleSearchInput);
@@ -497,5 +449,15 @@ async function init() {
     searchInput.addEventListener('keydown', handleSearchKeydown);
   }
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (user && user.id_rol === 3) {
+    const userMenuItem = document.querySelector('[data-page="usuarios"]');
+    if (userMenuItem) {
+      userMenuItem.style.display = 'none';
+    }
+  }
+});
 
 export { init };
