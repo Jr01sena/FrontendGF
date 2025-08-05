@@ -1,213 +1,1319 @@
-
-// 📅 CALENDARIO.JS - Refactorizado y Limpio
-// Conserva estructura y estilos actuales
-// Mejora: Click en días habilitados abre modal + alertas reactivas + limpieza de código
-
 import { request } from "../api/apiClient.js";
 import { programacionService } from '../api/programacion.service.js';
 import { gruposService } from '../api/grupos.service.js';
 
+
+// --- VARIABLES GLOBALES ---
 let currentUser = null;
 let currentRole = null;
 let currentInstructorId = null;
 let currentDate = new Date();
 let currentProgramaciones = [];
 let instructoresDisponibles = [];
-let diasFestivos = [];
+let diasFestivos = []; // Se llena dinámicamente desde la API
 
+
+// Elementos del DOM
 let elements = {};
 
-// 🔄 INIT PRINCIPAL
+// --- FUNCIONES DE INICIALIZACIÓN ---
+
 async function init() {
-  try {
-    console.log('🚀 Inicializando módulo de calendario');
+    try {
+        console.log('🚀 Inicializando módulo de calendario');
 
-    loadUserInfo();
-    initializeElements();
-    setupYearSelector();
-    setupEventListeners();
+        loadUserInfo();
+        initializeElements();
+        setupYearSelector();
+        setupEventListeners();
 
-    diasFestivos = await loadFestivos();
-    console.log(`📆 ${diasFestivos.length} festivos cargados`);
+        diasFestivos = await loadFestivos();
+        console.log(`📆 ${diasFestivos.length} festivos cargados`);
 
-    setupRoleInterface();
+        setupRoleInterface();
 
-    console.log('✅ Módulo de calendario inicializado correctamente');
-  } catch (error) {
-    console.error('❌ Error al inicializar calendario:', error);
-  }
+        setupModalAlertReset(); // ← AQUI va la llamada
+
+        console.log('✅ Módulo de calendario inicializado correctamente');
+    } catch (error) {
+        console.error('❌ Error al inicializar calendario:', error);
+    }
 }
 
+
+
+
 function loadUserInfo() {
-  const userString = localStorage.getItem('user');
-  if (userString) {
-    currentUser = JSON.parse(userString);
-    currentRole = currentUser.id_rol;
-    currentInstructorId = currentUser.id_usuario;
-    console.log('👤 Usuario actual:', currentUser);
-  }
+    const userString = localStorage.getItem('user');
+    if (userString) {
+        currentUser = JSON.parse(userString);
+        currentRole = currentUser.id_rol;
+        currentInstructorId = currentUser.id_usuario;
+        
+        console.log('👤 Usuario actual:', {
+            id: currentUser.id_usuario,
+            rol: currentRole,
+            nombre: currentUser.nombre_completo
+        });
+    }
 }
 
 function initializeElements() {
-  elements = {
-    calendarDays: document.getElementById('calendar-days'),
-    calendarMonthYear: document.getElementById('calendar-month-year'),
-    monthSelector: document.getElementById('month-selector'),
-    yearSelector: document.getElementById('year-selector'),
-    prevMonthBtn: document.getElementById('prev-month'),
-    nextMonthBtn: document.getElementById('next-month'),
-    addProgramacionBtn: document.getElementById('add-programacion-btn'),
-    calendarContainer: document.getElementById('calendar-container'),
-    calendarLoading: document.getElementById('calendar-loading'),
-    calendarError: document.getElementById('calendar-error'),
-    calendarSubtitle: document.getElementById('calendar-subtitle'),
-    instructorSelector: document.getElementById('instructor-selector'),
-    instructorSelectorContainer: document.getElementById('instructor-selector-container'),
-    selectInstructorMessage: document.getElementById('select-instructor-message'),
-    retryCalendarBtn: document.getElementById('retry-calendar'),
-    programacionModal: document.getElementById('programacion-modal'),
-    nuevaProgramacionModal: document.getElementById('nueva-programacion-modal')
-  };
+    elements = {
+        // Controles principales
+        instructorSelectorContainer: document.getElementById('instructor-selector-container'),
+        instructorSelector: document.getElementById('instructor-selector'),
+        calendarSubtitle: document.getElementById('calendar-subtitle'),
+        
+        // Navegación
+        prevMonthBtn: document.getElementById('prev-month'),
+        nextMonthBtn: document.getElementById('next-month'),
+        monthSelector: document.getElementById('month-selector'),
+        yearSelector: document.getElementById('year-selector'),
+        
+        // Contenido
+        selectInstructorMessage: document.getElementById('select-instructor-message'),
+        calendarLoading: document.getElementById('calendar-loading'),
+        calendarError: document.getElementById('calendar-error'),
+        calendarContainer: document.getElementById('calendar-container'),
+        calendarMonthYear: document.getElementById('calendar-month-year'),
+        calendarDays: document.getElementById('calendar-days'),
+        
+        // Botones
+        addProgramacionBtn: document.getElementById('add-programacion-btn'),
+        retryCalendarBtn: document.getElementById('retry-calendar'),
+        
+        // Modales
+        programacionModal: document.getElementById('programacion-modal'),
+        nuevaProgramacionModal: document.getElementById('nueva-programacion-modal')
+    };
 }
 
 function setupYearSelector() {
-  const currentYear = new Date().getFullYear();
-  const startYear = currentYear - 2;
-  const endYear = Math.max(currentYear + 3, 2030);
-  elements.yearSelector.innerHTML = '';
-  for (let year = startYear; year <= endYear; year++) {
-    const option = document.createElement('option');
-    option.value = year;
-    option.textContent = year;
-    if (year === currentYear) option.selected = true;
-    elements.yearSelector.appendChild(option);
-  }
-  elements.monthSelector.value = currentDate.getMonth();
+    const currentYear = new Date().getFullYear();
+    const startYear = currentYear - 2;
+    const endYear = Math.max(currentYear + 3, 2030); // ← Asegura que llegue a 2030
+    
+    elements.yearSelector.innerHTML = '';
+    
+    for (let year = startYear; year <= endYear; year++) {
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = year;
+        if (year === currentYear) {
+            option.selected = true;
+        }
+        elements.yearSelector.appendChild(option);
+    }
+    
+    // Establecer mes actual
+    elements.monthSelector.value = currentDate.getMonth();
 }
 
 function setupEventListeners() {
-  elements.prevMonthBtn.addEventListener('click', () => navigateMonth(-1));
-  elements.nextMonthBtn.addEventListener('click', () => navigateMonth(1));
-  elements.monthSelector.addEventListener('change', updateCalendarFromSelectors);
-  elements.yearSelector.addEventListener('change', updateCalendarFromSelectors);
-  elements.retryCalendarBtn.addEventListener('click', loadCalendar);
-  elements.addProgramacionBtn.addEventListener('click', () => openNuevaProgramacionModal());
-  if (elements.instructorSelector) {
+    // Navegación del calendario
+    elements.prevMonthBtn.addEventListener('click', () => navigateMonth(-1));
+    elements.nextMonthBtn.addEventListener('click', () => navigateMonth(1));
+    elements.monthSelector.addEventListener('change', updateCalendarFromSelectors);
+    elements.yearSelector.addEventListener('change', updateCalendarFromSelectors);
+    
+    // Selector de instructor (coordinadores)
     elements.instructorSelector.addEventListener('change', handleInstructorChange);
-  }
+    
+    // Botones
+    elements.addProgramacionBtn.addEventListener('click', openNuevaProgramacionModal);
+    elements.retryCalendarBtn.addEventListener('click', loadCalendar);
+    
+    // Modales
+    setupModalEventListeners();
 }
 
-function navigateMonth(delta) {
-  currentDate.setMonth(currentDate.getMonth() + delta);
-  updateSelectorsFromDate();
-  loadCalendar();
+function setupRoleInterface() {
+    if (currentRole === 3) {
+        // Instructor: Mostrar calendario directamente
+        elements.calendarSubtitle.textContent = 'Tu programación académica';
+        elements.addProgramacionBtn.classList.remove('d-none');
+        loadCalendar();
+    } else if (currentRole === 1 || currentRole === 2) {
+        // Coordinador: Mostrar selector de instructor
+        elements.calendarSubtitle.textContent = 'Gestiona la programación de instructores';
+        elements.instructorSelectorContainer.classList.remove('d-none');
+        elements.selectInstructorMessage.classList.remove('d-none');
+        loadInstructores();
+    } else {
+        showCalendarError('No tienes permisos para acceder al calendario');
+    }
+}
+
+// --- FUNCIONES DE NAVEGACIÓN ---
+
+function navigateMonth(direction) {
+    currentDate.setMonth(currentDate.getMonth() + direction);
+    updateSelectorsFromDate();
+    loadCalendar();
 }
 
 function updateCalendarFromSelectors() {
-  const month = parseInt(elements.monthSelector.value);
-  const year = parseInt(elements.yearSelector.value);
-  currentDate = new Date(year, month, 1);
-  loadCalendar();
+    const month = parseInt(elements.monthSelector.value);
+    const year = parseInt(elements.yearSelector.value);
+    
+    currentDate = new Date(year, month, 1);
+    loadCalendar();
 }
 
 function updateSelectorsFromDate() {
-  elements.monthSelector.value = currentDate.getMonth();
-  elements.yearSelector.value = currentDate.getFullYear();
+    elements.monthSelector.value = currentDate.getMonth();
+    elements.yearSelector.value = currentDate.getFullYear();
 }
 
-function showCalendarLoading() {
-  elements.calendarLoading.classList.remove('d-none');
-  elements.calendarError.classList.add('d-none');
-  elements.calendarContainer.classList.add('d-none');
-}
+// --- FUNCIONES DE CARGA DE DATOS ---
 
-function showCalendar() {
-  elements.calendarContainer.classList.remove('d-none');
-  elements.calendarLoading.classList.add('d-none');
-  elements.calendarError.classList.add('d-none');
-}
+async function loadInstructores() {
+  try {
+    console.log('👥 Cargando instructores disponibles...');
 
-function showCalendarError(message) {
-  elements.calendarError.classList.remove('d-none');
-  elements.calendarLoading.classList.add('d-none');
-  elements.calendarContainer.classList.add('d-none');
-  const msg = document.getElementById('calendar-error-message');
-  if (msg) msg.textContent = message;
-}
+    // Obtener instructores desde la API
+    instructoresDisponibles = await gruposService.getInstructoresDisponibles();
 
-function renderCalendar(programaciones = []) {
-  const year = currentDate.getFullYear();
-  const month = currentDate.getMonth();
-  const today = new Date();
+    const selectId = '#instructor-selector'; // Selector CSS para TomSelect
+    const select = document.querySelector(selectId);
 
-  const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  elements.calendarMonthYear.textContent = `${monthNames[month]} ${year}`;
+    // Limpiar el contenido del select manualmente
+    select.innerHTML = '';
 
-  const firstDay = new Date(year, month, 1);
-  const startDate = new Date(firstDay);
-  startDate.setDate(startDate.getDate() - firstDay.getDay());
+    // Crear opciones
+    const opciones = instructoresDisponibles.map(instructor => ({
+      value: instructor.id_usuario,
+      text: instructor.nombre_completo || `Usuario ID: ${instructor.id_usuario}`
+    }));
 
-  elements.calendarDays.innerHTML = '';
-
-  for (let i = 0; i < 42; i++) {
-    const day = new Date(startDate);
-    day.setDate(startDate.getDate() + i);
-
-    const dayEl = document.createElement('div');
-    dayEl.className = 'calendar-day';
-
-    const isToday = isSameDay(day, today);
-    const isOtherMonth = day.getMonth() !== month;
-    const isSunday = day.getDay() === 0;
-    const isHoliday = diasFestivos.includes(formatDateForAPI(day));
-
-    if (isToday) dayEl.classList.add('today');
-    if (isOtherMonth) dayEl.classList.add('other-month');
-    if (isSunday || isHoliday) {
-      dayEl.classList.add('dia-bloqueado', 'disabled');
-      dayEl.title = isSunday ? 'Domingo no programable' : 'Festivo no programable';
-    } else {
-      dayEl.addEventListener('click', () => openNuevaProgramacionModal(day));
+    // Destruir instancia anterior de TomSelect si existe
+    if (select.tomselect) {
+      select.tomselect.destroy();
     }
 
-    const numberEl = document.createElement('div');
-    numberEl.className = 'day-number';
-    numberEl.textContent = day.getDate();
-    dayEl.appendChild(numberEl);
+    // Inicializar TomSelect con opciones
+    new TomSelect(selectId, {
+      options: opciones,
+      placeholder: 'Buscar instructor...',
+      create: false,
+      searchField: ['text'], // Búsqueda completa
+      sortField: {
+        field: 'text',
+        direction: 'asc'
+      },
+      maxOptions: 100,
+      highlight: true
+    });
 
-    const events = programaciones.filter(p => isSameDay(parseLocalDate(p.fecha_programada), day));
-    for (const prog of events) {
-      const btn = document.createElement('button');
-      btn.className = 'programacion-event';
-      btn.type = 'button';
-      btn.innerHTML = `<span class="ficha-number">${prog.cod_ficha}</span><span class="horas">${prog.horas_programadas}h</span>`;
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        openProgramacionModal(prog.id_programacion);
-      });
-      dayEl.appendChild(btn);
-    }
-
-    elements.calendarDays.appendChild(dayEl);
+    console.log(`✅ ${instructoresDisponibles.length} instructores cargados`);
+  } catch (error) {
+    console.error('❌ Error al cargar instructores:', error);
   }
 }
 
-function isSameDay(d1, d2) {
-  return d1.getFullYear() === d2.getFullYear() &&
-         d1.getMonth() === d2.getMonth() &&
-         d1.getDate() === d2.getDate();
+
+function handleInstructorChange() {
+    const selectedInstructorId = parseInt(elements.instructorSelector.value);
+    
+    if (selectedInstructorId) {
+        currentInstructorId = selectedInstructorId;
+        elements.selectInstructorMessage.classList.add('d-none');
+        elements.addProgramacionBtn.classList.remove('d-none');
+        loadCalendar();
+    } else {
+        currentInstructorId = null;
+        elements.selectInstructorMessage.classList.remove('d-none');
+        elements.addProgramacionBtn.classList.add('d-none');
+        hideCalendar();
+    }
+}
+
+async function loadCalendar() {
+    if (!currentInstructorId) {
+        return;
+    }
+    
+    try {
+        showCalendarLoading();
+        
+        console.log('📅 Cargando programación del calendario...');
+        
+        // Formatear fecha para la consulta
+        const fechaConsulta = formatDateForAPI(currentDate);
+        
+        // Cargar programaciones según el rol
+        if (currentRole === 3) {
+            // Instructor: usar sus propias programaciones
+            currentProgramaciones = await programacionService.getOwnProgramaciones();
+        } else {
+            // Coordinador: obtener programaciones del instructor seleccionado
+            currentProgramaciones = await programacionService.getProgramacionesByInstructorMes(
+                currentInstructorId, 
+                fechaConsulta
+            );
+        }
+        
+        // Filtrar programaciones del mes actual
+        const programacionesMes = filterProgramacionesByMonth(currentProgramaciones, currentDate);
+        
+        console.log(`✅ ${programacionesMes.length} programaciones cargadas para el mes`);
+        
+        // Renderizar calendario
+        renderCalendar(programacionesMes);
+        showCalendar();
+        
+    } catch (error) {
+        console.error('❌ Error al cargar calendario:', error);
+        showCalendarError(error.message || 'Error al cargar la programación');
+    }
+}
+
+async function loadFestivos() {
+    try {
+        const response = await fetch('https://api.gestion-formacion.tech/festivos/get-all', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+            }
+        });
+
+        const data = await response.json();
+        if (!Array.isArray(data)) throw new Error('Respuesta inválida del backend: no es un arreglo');
+
+        const fechas = data.map(f => f.festivo.split('T')[0]); // ← ⬅️ corrección clave aquí
+        console.log(`✅ ${fechas.length} festivos cargados:`, fechas);
+        return fechas;
+    } catch (error) {
+        console.error('❌ Error al cargar festivos:', error);
+        return [];
+    }
+}
+
+
+console.log('Festivos cargados:', diasFestivos);
+
+
+function filterProgramacionesByMonth(programaciones, date) {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    
+    return programaciones.filter(prog => {
+        const progDate = new Date(prog.fecha_programada);
+        return progDate.getFullYear() === year && progDate.getMonth() === month;
+    });
+}
+
+// --- FUNCIONES DE RENDERIZADO ---
+
+function renderCalendar(programaciones) {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    
+    // Actualizar título del mes
+    const monthNames = [
+        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
+    elements.calendarMonthYear.textContent = `${monthNames[month]} ${year}`;
+    
+    // Calcular días del calendario
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay());
+    
+    const today = new Date();
+    
+    // Generar días del calendario
+    elements.calendarDays.innerHTML = '';
+    
+    for (let i = 0; i < 42; i++) { // 6 semanas x 7 días
+        const currentDay = new Date(startDate);
+        currentDay.setDate(startDate.getDate() + i);
+        
+        const dayElement = createDayElement(currentDay, month, today, programaciones);
+        elements.calendarDays.appendChild(dayElement);
+    }
+}
+
+function createProgramacionEvent(programacion) {
+    const eventBtn = document.createElement('button');
+    eventBtn.className = 'programacion-event';
+    eventBtn.type = 'button';
+
+    eventBtn.innerHTML = `
+        <span class="ficha-number">${programacion.cod_ficha}</span>
+        <span class="horas">${programacion.horas_programadas}h</span>
+    `;
+
+    eventBtn.addEventListener('click', () => openProgramacionModal(programacion.id_programacion));
+
+    return eventBtn;
+}
+
+
+
+function createDayElement(date, currentMonth, today, programaciones) {
+    const dayDiv = document.createElement('div');
+    dayDiv.className = 'calendar-day';
+    
+    // Clases adicionales
+    if (date.getMonth() !== currentMonth) {
+        dayDiv.classList.add('other-month');
+    }
+    
+    if (isSameDay(date, today)) {
+        dayDiv.classList.add('today');
+    }
+    
+    // Número del día
+    const dayNumber = document.createElement('div');
+    dayNumber.className = 'day-number';
+    dayNumber.textContent = date.getDate();
+    dayDiv.appendChild(dayNumber);
+    
+    // Si es un día hábil (no domingo ni festivo), permitir abrir el modal
+    const esDomingo = date.getDay() === 0;
+    const esFestivo = diasFestivos.includes(formatDateForAPI(date));
+    if (!esDomingo && !esFestivo) {
+        dayDiv.addEventListener('click', () => openNuevaProgramacionModal(date));
+    }
+
+    // Programaciones del día
+    const dayProgramaciones = programaciones.filter(prog => 
+        isSameDay(parseLocalDate(prog.fecha_programada), date)
+    );
+    
+    dayProgramaciones.forEach(prog => {
+        const eventBtn = createProgramacionEvent(prog);  // ← Ya agrega los datasets internamente
+        dayDiv.appendChild(eventBtn);
+    });
+
+    const isDomingo = date.getDay() === 0;
+    const isFestivo = diasFestivos.includes(formatDateForAPI(date));
+
+    if (isDomingo || isFestivo) {
+        dayDiv.classList.add('dia-bloqueado');
+        dayDiv.classList.add('disabled');
+        dayDiv.title = isDomingo ? 'Domingo no programable' : 'Festivo no programable';
+    }
+    
+    return dayDiv;
+}
+
+
+
+// --- FUNCIONES DE MODALES ---
+
+function setupModalEventListeners() {
+    // Modal de programación
+    const editBtn = document.getElementById('edit-programacion-btn');
+    const saveBtn = document.getElementById('save-programacion-btn');
+    const cancelBtn = document.getElementById('cancel-edit-btn');
+    
+    if (editBtn) editBtn.addEventListener('click', enableEditMode);
+    if (saveBtn) saveBtn.addEventListener('click', saveProgramacion);
+    if (cancelBtn) cancelBtn.addEventListener('click', cancelEditMode);
+    
+    // Event listener para reset cuando se cierra el modal de programación
+    const programacionModal = document.getElementById('programacion-modal');
+    if (programacionModal) {
+        programacionModal.addEventListener('hidden.bs.modal', () => {
+            resetEditMode();
+            currentProgramacionId = null;
+        });
+    }
+    
+    // Modal nueva programación
+    const guardarBtn = document.getElementById('guardar-nueva-programacion');
+    if (guardarBtn) guardarBtn.addEventListener('click', createNuevaProgramacion);
+    
+    // Event listener para reset cuando se cierra el modal de nueva programación
+    const nuevaProgramacionModal = document.getElementById('nueva-programacion-modal');
+    if (nuevaProgramacionModal) {
+        nuevaProgramacionModal.addEventListener('hidden.bs.modal', () => {
+            resetNuevaProgramacionForm();
+        });
+    }
+    
+    // Listeners para cascadas de selects
+    const nuevaFicha = document.getElementById('nueva-ficha');
+    const nuevaCompetencia = document.getElementById('nueva-competencia');
+    
+    if (nuevaFicha) nuevaFicha.addEventListener('change', loadCompetenciasByFicha);
+    if (nuevaCompetencia) nuevaCompetencia.addEventListener('change', loadResultadosByCompetencia);
+}
+
+async function openProgramacionModal(idProgramacion) {
+    try {
+        // Guardar ID de la programación actual
+        currentProgramacionId = idProgramacion;
+        
+        const modal = new bootstrap.Modal(elements.programacionModal);
+        
+        // Mostrar loading
+        showModalLoading();
+        hideModalError();
+        hideModalContent();
+        
+        // Resetear modo edición al abrir
+        resetEditMode();
+        
+        hideNuevaModalError();
+        hideModalError();
+        modal.show();
+        
+        // Cargar datos de la programación
+        const programacion = await programacionService.getProgramacionById(idProgramacion);
+        
+        // Poblar formulario
+        populateProgramacionForm(programacion);
+        
+        // Mostrar contenido
+        showModalContent();
+        hideModalLoading();
+        
+        // Configurar botones según permisos
+        setupModalButtons(programacion);
+        
+    } catch (error) {
+        console.error('❌ Error al abrir modal de programación:', error);
+        showModalError(error.message || 'Error al cargar los detalles');
+        hideModalLoading();
+    }
+}
+
+function populateProgramacionForm(programacion) {
+    window.programacionOriginal = programacion;
+
+    document.getElementById('modal-cod-ficha').value = programacion.cod_ficha || '';
+    document.getElementById('modal-fecha').value = programacion.fecha_programada || '';
+    document.getElementById('modal-horas').value = programacion.horas_programadas || '';
+    document.getElementById('modal-hora-inicio').value = programacion.hora_inicio || '';
+    document.getElementById('modal-hora-fin').value = programacion.hora_fin || '';
+
+    document.getElementById('modal-competencia-text').value = `${programacion.cod_competencia || ''} - ${programacion.nombre_competencia || ''}`;
+    document.getElementById('modal-resultado-text').value = `${programacion.cod_resultado || ''} - ${programacion.nombre_resultado || ''}`;
+
+    const instructorContainer = document.getElementById('modal-instructor-container');
+    if (currentRole === 1 || currentRole === 2) {
+        document.getElementById('modal-instructor').value = programacion.nombre_instructor || '';
+        instructorContainer.classList.remove('d-none');
+    } else {
+        instructorContainer.classList.add('d-none');
+    }
+
+    currentProgramacionId = programacion.id_programacion;
+
+    (async () => {
+        try {
+            const codFicha = programacion.cod_ficha;
+
+            const [grupo] = await gruposService.getGruposByCodFicha(codFicha);
+            console.log('📦 Grupo:', grupo);
+            if (!grupo) return;
+
+            const programa = await gruposService.getProgramaFormacion(grupo.cod_programa, grupo.la_version);
+            console.log('📘 Programa:', programa);
+
+            const ambientes = await gruposService.getAmbientesDisponibles();
+            console.log('🏠 Ambientes disponibles:', ambientes);
+
+            const ambienteActual = ambientes.find(a => a.id_ambiente === grupo.id_ambiente);
+            console.log('✅ Ambiente actual:', ambienteActual);
+
+            document.getElementById('modal-programa').value = programa?.nombre || '';
+            document.getElementById('modal-modalidad').value = grupo?.modalidad || 'No disponible';
+            document.getElementById('modal-municipio').value = grupo?.nombre_municipio || 'No disponible';
+            document.getElementById('modal-ambiente').value = ambienteActual?.nombre_ambiente || 'Sin ambiente';
+
+        } catch (error) {
+            console.warn('⚠️ No se pudo cargar detalles del grupo o programa:', error);
+        }
+    })();
+
+    // Calcular totales del mes
+    try {
+    const fichaActual = programacion.cod_ficha;
+    const mesActual = currentDate.getMonth(); // de 0 a 11
+    const anioActual = currentDate.getFullYear();
+
+    // Asegúrate de que currentProgramaciones esté poblado
+    const programacionesInstructor = currentProgramaciones || [];
+
+    // 🔵 Total de horas de la ficha seleccionada
+    const totalFicha = programacionesInstructor
+        .filter(p => p.cod_ficha === fichaActual)
+        .filter(p => {
+        const fecha = new Date(p.fecha_programada);
+        return fecha.getMonth() === mesActual && fecha.getFullYear() === anioActual;
+        })
+        .reduce((acc, p) => acc + (p.horas_programadas || 0), 0);
+
+    // 🟢 Total de horas del instructor (todas las fichas)
+    const totalInstructor = programacionesInstructor
+        .filter(p => {
+        const fecha = new Date(p.fecha_programada);
+        return fecha.getMonth() === mesActual && fecha.getFullYear() === anioActual;
+        })
+        .reduce((acc, p) => acc + (p.horas_programadas || 0), 0);
+
+    // Mostrar en el modal
+    document.getElementById('modal-total-instructor').value = `${totalInstructor} horas`;
+    document.getElementById('modal-total-ficha').value = `${totalFicha} horas`;
+
+    } catch (error) {
+    console.warn('⚠️ Error al calcular totales mensuales:', error);
+    document.getElementById('modal-total-instructor').value = 'Error';
+    document.getElementById('modal-total-ficha').value = 'Error';
+    }
+
+}
+
+
+function setupModalButtons(programacion) {
+    const editBtn = document.getElementById('edit-programacion-btn');
+    
+    // Mostrar botón editar solo si tiene permisos
+    if (canEditProgramacion(programacion)) {
+        editBtn.classList.remove('d-none');
+    } else {
+        editBtn.classList.add('d-none');
+    }
+}
+
+function canEditProgramacion(programacion) {
+    // Coordinadores pueden editar todo
+    if (currentRole === 1 || currentRole === 2) {
+        return true;
+    }
+    
+    // Instructores solo pueden editar sus propias programaciones
+    if (currentRole === 3) {
+        return programacion.id_instructor === currentInstructorId;
+    }
+    
+    return false;
+}
+
+function setupModalAlertReset() {
+    const nuevaModal = document.getElementById('nueva-programacion-modal');
+    const editarModal = document.getElementById('programacion-modal');
+
+    if (nuevaModal) {
+        nuevaModal.addEventListener('shown.bs.modal', () => {
+            hideNuevaModalError();
+        });
+        nuevaModal.addEventListener('hidden.bs.modal', () => {
+            hideNuevaModalError();
+        });
+    }
+
+    if (editarModal) {
+        editarModal.addEventListener('shown.bs.modal', () => {
+            hideModalError();
+        });
+        editarModal.addEventListener('hidden.bs.modal', () => {
+            hideModalError();
+        });
+    }
+}
+
+
+// --- FUNCIONES DE ESTADOS UI ---
+
+function showCalendarLoading() {
+    elements.calendarLoading.classList.remove('d-none');
+    elements.calendarError.classList.add('d-none');
+    elements.calendarContainer.classList.add('d-none');
+}
+
+function showCalendar() {
+    elements.calendarContainer.classList.remove('d-none');
+    elements.calendarLoading.classList.add('d-none');
+    elements.calendarError.classList.add('d-none');
+}
+
+function showCalendarError(message) {
+    elements.calendarError.classList.remove('d-none');
+    elements.calendarLoading.classList.add('d-none');
+    elements.calendarContainer.classList.add('d-none');
+    
+    const errorMsg = document.getElementById('calendar-error-message');
+    if (errorMsg) errorMsg.textContent = message;
+}
+
+function hideCalendar() {
+    elements.calendarContainer.classList.add('d-none');
+    elements.calendarLoading.classList.add('d-none');
+    elements.calendarError.classList.add('d-none');
+}
+
+function showModalLoading() {
+    document.getElementById('modal-loading').classList.remove('d-none');
+}
+
+function hideModalLoading() {
+    document.getElementById('modal-loading').classList.add('d-none');
+}
+
+function showModalContent() {
+    document.getElementById('modal-content').classList.remove('d-none');
+}
+
+function hideModalContent() {
+    document.getElementById('modal-content').classList.add('d-none');
+}
+
+function showNuevaModalError(message) {
+    const errorDiv = document.getElementById('nueva-modal-error');
+    const errorText = document.getElementById('nueva-modal-error-text');
+
+    if (errorDiv && errorText) {
+        errorText.textContent = message;
+        errorDiv.classList.remove('d-none');
+    }
+}
+
+function hideNuevaModalError() {
+    const errorDiv = document.getElementById('nueva-modal-error');
+    if (errorDiv) errorDiv.classList.add('d-none');
+}
+
+function showModalError(message) {
+    const errorDiv = document.getElementById('modal-error');
+    const errorText = document.getElementById('modal-error-text');
+
+    if (errorDiv && errorText) {
+        errorText.textContent = message;
+        errorDiv.classList.remove('d-none');
+    }
+}
+
+function hideModalError() {
+    const errorDiv = document.getElementById('modal-error');
+    if (errorDiv) errorDiv.classList.add('d-none');
+}
+
+// --- FUNCIONES AUXILIARES ---
+
+function isSameDay(date1, date2) {
+    return date1.getFullYear() === date2.getFullYear() &&
+           date1.getMonth() === date2.getMonth() &&
+           date1.getDate() === date2.getDate();
 }
 
 function formatDateForAPI(date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 }
 
-function parseLocalDate(str) {
-  const [y, m, d] = str.split('-').map(Number);
-  return new Date(y, m - 1, d);
+function parseLocalDate(dateStr) {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return new Date(year, month - 1, day); // mes -1 porque enero = 0
 }
 
-export { init };
+// --- FUNCIONES DE EDICIÓN Y CREACIÓN ---
+
+let editMode = false;
+let currentProgramacionId = null;
+
+async function enableEditMode() {
+    console.log('🔧 Habilitando modo edición...');
+    editMode = true;
+
+    // Habilitar campos editables
+    const editableFields = ['modal-fecha', 'modal-horas'];
+    editableFields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field) field.removeAttribute('readonly');
+    });
+
+    // Mostrar selects y ocultar texto plano para competencia y resultado
+    document.getElementById('modal-competencia-text').classList.add('d-none');
+    document.getElementById('modal-resultado-text').classList.add('d-none');
+    document.getElementById('modal-competencia-select').classList.remove('d-none');
+    document.getElementById('modal-resultado-select').classList.remove('d-none');
+
+    // Obtener cod_ficha actual (ya cargado en el campo de solo lectura)
+    const codFicha = document.getElementById('modal-cod-ficha').value;
+    if (!codFicha) {
+        showModalError('No se encontró la ficha para editar');
+        return;
+    }
+
+    try {
+        // Cargar hora inicio y fin desde la ficha (solo lectura)
+        await loadHorarioGrupo(codFicha);
+
+        // Cargar competencias y resultados correspondientes
+        await loadCompetenciasByFichaEnEdicion(codFicha);
+
+        // Cargar la programación original para seleccionar valores actuales
+        const programacion = window.programacionOriginal;
+
+        // Preseleccionar competencia y resultado actuales
+        if (programacion.cod_competencia) {
+            document.getElementById('modal-competencia-select').value = programacion.cod_competencia;
+            // Cargar resultados para esa competencia y seleccionar el actual
+            const resultados = await programacionService.getResultadosByCompetencia(programacion.cod_competencia);
+            const resultadoSelect = document.getElementById('modal-resultado-select');
+            resultadoSelect.innerHTML = '<option value="">Seleccionar resultado...</option>';
+            resultados.forEach(resultado => {
+                const option = document.createElement('option');
+                option.value = resultado.cod_resultado;
+                option.textContent = `${resultado.cod_resultado} - ${resultado.nombre}`;
+                resultadoSelect.appendChild(option);
+            });
+            resultadoSelect.value = programacion.cod_resultado || '';
+        }
+
+    } catch (error) {
+        console.error('❌ Error en enableEditMode:', error);
+        showModalError('Error al preparar la edición');
+    }
+
+    // Mostrar/ocultar botones
+    document.getElementById('edit-programacion-btn').classList.add('d-none');
+    document.getElementById('save-programacion-btn').classList.remove('d-none');
+    document.getElementById('cancel-edit-btn').classList.remove('d-none');
+
+    // Cambiar título del modal
+    document.getElementById('programacion-modal-label').innerHTML = `
+        <i class="material-symbols-rounded me-2">edit</i>
+        Editar Programación
+    `;
+
+    // Validar que no se permita seleccionar domingos ni festivos
+    const fechaInput = document.getElementById('modal-fecha');
+    fechaInput.addEventListener('input', (e) => {
+        const fecha = e.target.value;
+        const fechaDate = parseLocalDate(fecha);
+        const esDomingo = fechaDate.getDay() === 0;
+        const esFestivo = diasFestivos.includes(fecha);
+
+        if (esDomingo || esFestivo) {
+            showModalError('No se puede programar en domingos ni festivos.');
+            e.target.value = '';
+        } else {
+            hideModalError();
+        }
+    });
+
+}
+
+async function loadCompetenciasByFichaEnEdicion(codFicha) {
+    try {
+        const competencias = await programacionService.getCompetenciasByFicha(parseInt(codFicha));
+        const competenciaSelect = document.getElementById('modal-competencia-select');
+        competenciaSelect.innerHTML = '<option value="">Seleccionar competencia...</option>';
+
+        competencias.forEach(competencia => {
+            const option = document.createElement('option');
+            option.value = competencia.cod_competencia;
+            option.textContent = `${competencia.cod_competencia} - ${competencia.nombre}`;
+            competenciaSelect.appendChild(option);
+        });
+
+        // Al cambiar la competencia, se cargan los resultados asociados
+        competenciaSelect.addEventListener('change', async () => {
+            const codCompetencia = competenciaSelect.value;
+            const resultados = await programacionService.getResultadosByCompetencia(parseInt(codCompetencia));
+
+            const resultadoSelect = document.getElementById('modal-resultado-select');
+            resultadoSelect.innerHTML = '<option value="">Seleccionar resultado...</option>';
+
+            resultados.forEach(resultado => {
+                const option = document.createElement('option');
+                option.value = resultado.cod_resultado;
+                option.textContent = `${resultado.cod_resultado} - ${resultado.nombre}`;
+                resultadoSelect.appendChild(option);
+            });
+        });
+
+    } catch (error) {
+        console.error('❌ Error al cargar competencias en edición:', error);
+    }
+}
+
+
+async function saveProgramacion() {
+    console.log('💾 Guardando programación...');
+
+    if (!currentProgramacionId) {
+        showModalError('No hay programación seleccionada para guardar');
+        return;
+    }
+
+    try {
+        // Deshabilitar botón mientras se guarda
+        const saveBtn = document.getElementById('save-programacion-btn');
+        const saveText = document.getElementById('save-programacion-text');
+        const originalText = saveText.textContent;
+
+        saveBtn.disabled = true;
+        saveText.textContent = 'Guardando...';
+
+        // Obtener datos del formulario
+        const updateData = {
+            fecha_programada: document.getElementById('modal-fecha').value,
+            horas_programadas: parseInt(document.getElementById('modal-horas').value),
+            hora_inicio: document.getElementById('modal-hora-inicio').value,
+            hora_fin: document.getElementById('modal-hora-fin').value,
+            cod_competencia: parseInt(document.getElementById('modal-competencia-select').value),
+            cod_resultado: parseInt(document.getElementById('modal-resultado-select').value)
+        };
+
+        // Validaciones básicas
+        if (!updateData.fecha_programada || isNaN(updateData.horas_programadas) ||
+            !updateData.hora_inicio || !updateData.hora_fin ||
+            isNaN(updateData.cod_competencia) || isNaN(updateData.cod_resultado)) {
+            throw new Error('Todos los campos son obligatorios');
+        }
+
+        if (updateData.hora_inicio >= updateData.hora_fin) {
+            throw new Error('La hora de inicio debe ser menor que la hora de fin');
+        }
+
+        // Validar conflicto de horario con otras programaciones (excluyendo la actual)
+        const programacionesEnFecha = currentProgramaciones.filter(p =>
+            p.id_instructor === currentInstructorId &&
+            p.fecha_programada === updateData.fecha_programada &&
+            p.id_programacion !== currentProgramacionId
+        );
+
+        const traslape = programacionesEnFecha.some(p => {
+            return (
+                (updateData.hora_inicio >= p.hora_inicio && updateData.hora_inicio < p.hora_fin) ||
+                (updateData.hora_fin > p.hora_inicio && updateData.hora_fin <= p.hora_fin) ||
+                (updateData.hora_inicio <= p.hora_inicio && updateData.hora_fin >= p.hora_fin)
+            );
+        });
+
+        if (traslape) {
+            throw new Error('Este horario se cruza con otra programación existente.');
+        }
+
+        // Actualizar programación
+        await programacionService.updateProgramacion(currentProgramacionId, updateData);
+
+        // Cerrar modal y recargar calendario
+        const modal = bootstrap.Modal.getInstance(elements.programacionModal);
+        modal.hide();
+
+        // Recargar calendario
+        await loadCalendar();
+
+        console.log('✅ Programación actualizada correctamente');
+
+    } catch (error) {
+        console.error('❌ Error al guardar programación:', error);
+        showModalError(error.message || 'Error al guardar los cambios');
+
+    } finally {
+        // Restaurar botón
+        const saveBtn = document.getElementById('save-programacion-btn');
+        const saveText = document.getElementById('save-programacion-text');
+        saveBtn.disabled = false;
+        saveText.textContent = 'Guardar Cambios';
+    }
+}
+
+
+function cancelEditMode() {
+    console.log('❌ Cancelando edición...');
+    
+    // Cerrar modal sin guardar
+    const modal = bootstrap.Modal.getInstance(elements.programacionModal);
+    if (modal) {
+        modal.hide();
+    }
+    
+    resetEditMode();
+}
+
+function resetEditMode() {
+    editMode = false;
+    currentProgramacionId = null;
+
+    // Restaurar campos como readonly
+    const editableFields = ['modal-fecha', 'modal-horas'];
+    editableFields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field) field.setAttribute('readonly', true);
+    });
+
+    // Restaurar visibilidad: ocultar selects, mostrar texto
+    const competenciaText = document.getElementById('modal-competencia-text');
+    const resultadoText = document.getElementById('modal-resultado-text');
+    const competenciaSelect = document.getElementById('modal-competencia-select');
+    const resultadoSelect = document.getElementById('modal-resultado-select');
+
+    if (competenciaText) competenciaText.classList.remove('d-none');
+    if (resultadoText) resultadoText.classList.remove('d-none');
+    if (competenciaSelect) competenciaSelect.classList.add('d-none');
+    if (resultadoSelect) resultadoSelect.classList.add('d-none');
+
+    // Limpiar selects de edición
+    if (competenciaSelect) competenciaSelect.innerHTML = '<option value="">Seleccionar competencia...</option>';
+    if (resultadoSelect) resultadoSelect.innerHTML = '<option value="">Seleccionar resultado...</option>';
+
+    // Restaurar botones
+    document.getElementById('edit-programacion-btn').classList.remove('d-none');
+    document.getElementById('save-programacion-btn').classList.add('d-none');
+    document.getElementById('cancel-edit-btn').classList.add('d-none');
+
+    // Restaurar título del modal
+    document.getElementById('programacion-modal-label').innerHTML = `
+        <i class="material-symbols-rounded me-2">event_note</i>
+        Detalles de Programación
+    `;
+
+    delete window.programacionOriginal;
+
+}
+
+
+
+async function openNuevaProgramacionModal(date = null) {
+    console.log('➕ Abriendo modal nueva programación...');
+    
+    try {
+        const modal = new bootstrap.Modal(elements.nuevaProgramacionModal);
+        
+        // Limpiar formulario
+        resetNuevaProgramacionForm();
+        
+        // Cargar fichas del instructor
+        await loadFichasForNewProgramacion();
+        
+                const fechaPorDefecto = date || new Date();
+        document.getElementById('nueva-fecha').value = formatDateForAPI(fechaPorDefecto);
+        
+        const fechaInput = document.getElementById('nueva-fecha');
+        fechaInput.addEventListener('input', (e) => {
+            const fecha = e.target.value;
+            const fechaDate = parseLocalDate(fecha);
+            const esDomingo = fechaDate.getDay() === 0;
+            const esFestivo = diasFestivos.includes(fecha);
+
+            if (esDomingo || esFestivo) {
+                showNuevaModalError('No se puede programar en domingos ni festivos.');
+                e.target.value = '';
+            } else {
+                hideNuevaModalError();
+            }
+        });
+
+        hideNuevaModalError();
+        hideModalError();
+        modal.show();
+        
+    } catch (error) {
+        console.error('❌ Error al abrir modal nueva programación:', error);
+        showNuevaModalError(error.message || 'Error al cargar el formulario');
+    }
+}
+
+
+async function createNuevaProgramacion() {
+    console.log('💾 Creando nueva programación...');
+    
+    try {
+        // Deshabilitar botón mientras se crea
+        const guardarBtn = document.getElementById('guardar-nueva-programacion');
+        const guardarText = document.getElementById('guardar-nueva-text');
+        const originalText = guardarText.textContent;
+        
+        guardarBtn.disabled = true;
+        guardarText.textContent = 'Creando...';
+        
+        // Obtener datos del formulario
+        const programacionData = {
+            id_instructor: currentInstructorId,
+            cod_ficha: parseInt(document.getElementById('nueva-ficha').value),
+            fecha_programada: document.getElementById('nueva-fecha').value,
+            horas_programadas: parseInt(document.getElementById('nueva-horas').value),
+            hora_inicio: document.getElementById('nueva-hora-inicio').value,
+            hora_fin: document.getElementById('nueva-hora-fin').value,
+            cod_competencia: parseInt(document.getElementById('nueva-competencia').value),
+            cod_resultado: parseInt(document.getElementById('nueva-resultado').value)
+        };
+
+        const fecha = programacionData.fecha_programada;
+        const fechaDate = parseLocalDate(fecha);
+        const esDomingo = fechaDate.getDay() === 0;
+        const esFestivo = diasFestivos.includes(fecha);
+
+        if (esDomingo || esFestivo) {
+            throw new Error('No se puede crear programación en domingos ni festivos.');
+        }
+
+        // Validaciones básicas
+        if (!programacionData.cod_ficha || !programacionData.fecha_programada || 
+            !programacionData.horas_programadas || !programacionData.hora_inicio || 
+            !programacionData.hora_fin || !programacionData.cod_competencia || 
+            !programacionData.cod_resultado) {
+            throw new Error('Todos los campos son obligatorios');
+        }
+        
+        if (programacionData.hora_inicio >= programacionData.hora_fin) {
+            throw new Error('La hora de inicio debe ser menor que la hora de fin');
+        }
+
+        // Validar traslape con otras programaciones
+        const fechaNueva = programacionData.fecha_programada;
+        const inicioNueva = programacionData.hora_inicio;
+        const finNueva = programacionData.hora_fin;
+
+        // Filtrar las programaciones del instructor en la misma fecha
+        const programacionesEnFecha = currentProgramaciones.filter(p =>
+            p.id_instructor === programacionData.id_instructor &&
+            p.fecha_programada === fechaNueva
+        );
+
+        const traslape = programacionesEnFecha.some(p => {
+            const iniExistente = p.hora_inicio;
+            const finExistente = p.hora_fin;
+
+            return (
+                (inicioNueva >= iniExistente && inicioNueva < finExistente) || // Inicia dentro de otra
+                (finNueva > iniExistente && finNueva <= finExistente) ||       // Termina dentro de otra
+                (inicioNueva <= iniExistente && finNueva >= finExistente)      // La nueva contiene a otra
+            );
+        });
+
+        if (traslape) {
+            throw new Error('Este horario se cruza con otra programación existente.');
+        }
+
+
+        // Crear programación
+        await programacionService.createProgramacion(programacionData);
+        
+        // Cerrar modal y recargar calendario
+        const modal = bootstrap.Modal.getInstance(elements.nuevaProgramacionModal);
+        modal.hide();
+        
+        // Recargar calendario
+        await loadCalendar();
+        
+        console.log('✅ Programación creada correctamente');
+        
+    } catch (error) {
+        console.error('❌ Error al crear programación:', error);
+        showNuevaModalError(error.message || 'Error al crear la programación');
+    } finally {
+        // Restaurar botón SIEMPRE
+        const guardarBtn = document.getElementById('guardar-nueva-programacion');
+        const guardarText = document.getElementById('guardar-nueva-text');
+        guardarBtn.disabled = false;
+        guardarText.textContent = 'Crear Programación';
+    }
+
+}
+
+async function loadFichasForNewProgramacion() {
+    try {
+        // Obtener fichas del instructor (placeholder - necesita implementación en backend)
+        console.log('📋 Cargando fichas del instructor...');
+        
+        const fichas = await programacionService.getFichasByInstructor(currentInstructorId);
+        
+        const fichaSelect = document.getElementById('nueva-ficha');
+        fichaSelect.innerHTML = '<option value="">Seleccionar ficha...</option>';
+        
+        if (fichas.length === 0) {
+            fichaSelect.innerHTML = '<option value="">No hay fichas asignadas</option>';
+            fichaSelect.disabled = true;
+        } else {
+            fichas.forEach(ficha => {
+                const option = document.createElement('option');
+                option.value = ficha.cod_ficha;
+                option.textContent = `Ficha ${ficha.cod_ficha}`;
+                fichaSelect.appendChild(option);
+            });
+
+            // Escuchar cambios en el select de ficha para cargar horario y competencias
+            document.getElementById('nueva-ficha').addEventListener('change', async function () {
+            const codFicha = this.value;
+
+            // Limpiar campos
+            document.getElementById('nueva-hora-inicio').value = '';
+            document.getElementById('nueva-hora-fin').value = '';
+            document.getElementById('nueva-programa').value = '';
+
+            if (!codFicha) return;
+
+            try {
+                // 1. Obtener el grupo usando el código de ficha
+                const [grupo] = await gruposService.getGruposByCodFicha(codFicha);
+                if (!grupo) throw new Error('Grupo no encontrado para la ficha seleccionada');
+
+                // 2. Asignar horas si existen
+                document.getElementById('nueva-hora-inicio').value = grupo.hora_inicio ?? '';
+                document.getElementById('nueva-hora-fin').value = grupo.hora_fin ?? '';
+
+                // 3. Obtener nombre del programa formativo
+                const programa = await gruposService.getProgramaFormacion(grupo.cod_programa, grupo.la_version);
+                document.getElementById('nueva-programa').value = programa?.nombre || 'Programa no encontrado';
+
+                // 4. (Opcional) Cargar competencias si aún no lo haces
+                await loadCompetenciasByFicha();
+
+            } catch (error) {
+                console.warn('❌ Error al cargar grupo/programa:', error);
+                document.getElementById('nueva-programa').value = 'Error al cargar programa';
+            }
+            });
+
+        }
+
+    } catch (error) {
+        console.error('❌ Error al cargar fichas:', error);
+        const fichaSelect = document.getElementById('nueva-ficha');
+        fichaSelect.innerHTML = '<option value="">Error al cargar fichas</option>';
+        fichaSelect.disabled = true;
+    }
+}
+
+
+// --- CARGAR HORARIO AUTOMÁTICAMENTE AL SELECCIONAR FICHA ---
+async function loadHorarioGrupo(codFicha) {
+    try {
+        console.log(`⏰ Cargando horario del grupo para ficha ${codFicha}...`);
+
+        const grupo = await request(`/grupo/get-by-cod-ficha/${codFicha}`, {
+            method: 'GET'
+        });
+
+        console.log('🕒 Horario del grupo:', grupo);
+
+        document.getElementById('nueva-hora-inicio').value = grupo.hora_inicio ?? '';
+        document.getElementById('nueva-hora-fin').value = grupo.hora_fin ?? '';
+    } catch (error) {
+        console.error('❌ Error al cargar horario del grupo:', error);
+    }
+}
+
+
+
+async function loadCompetenciasByFicha() {
+    const codFicha = document.getElementById('nueva-ficha').value;
+    
+    if (!codFicha) {
+        // Limpiar competencias y resultados
+        const competenciaSelect = document.getElementById('nueva-competencia');
+        const resultadoSelect = document.getElementById('nueva-resultado');
+        
+        competenciaSelect.innerHTML = '<option value="">Seleccionar competencia...</option>';
+        resultadoSelect.innerHTML = '<option value="">Seleccionar resultado...</option>';
+        return;
+    }
+    
+    try {
+        console.log('📚 Cargando competencias por ficha...');
+        
+        const competencias = await programacionService.getCompetenciasByFicha(parseInt(codFicha));
+        
+        const competenciaSelect = document.getElementById('nueva-competencia');
+        competenciaSelect.innerHTML = '<option value="">Seleccionar competencia...</option>';
+        
+        if (competencias.length === 0) {
+            competenciaSelect.innerHTML = '<option value="">No hay competencias disponibles</option>';
+        } else {
+            competencias.forEach(competencia => {
+                const option = document.createElement('option');
+                option.value = competencia.cod_competencia;
+                option.textContent = `${competencia.cod_competencia} - ${competencia.nombre}`;
+                competenciaSelect.appendChild(option);
+            });
+        }
+        
+        // Limpiar resultados
+        document.getElementById('nueva-resultado').innerHTML = '<option value="">Seleccionar resultado...</option>';
+        
+    } catch (error) {
+        console.error('❌ Error al cargar competencias:', error);
+        const competenciaSelect = document.getElementById('nueva-competencia');
+        competenciaSelect.innerHTML = '<option value="">Error al cargar competencias</option>';
+    }
+}
+
+async function loadResultadosByCompetencia() {
+    const codCompetencia = document.getElementById('nueva-competencia').value;
+    
+    if (!codCompetencia) {
+        const resultadoSelect = document.getElementById('nueva-resultado');
+        resultadoSelect.innerHTML = '<option value="">Seleccionar resultado...</option>';
+        return;
+    }
+    
+    try {
+        console.log('🎯 Cargando resultados por competencia...');
+        
+        const resultados = await programacionService.getResultadosByCompetencia(parseInt(codCompetencia));
+        
+        const resultadoSelect = document.getElementById('nueva-resultado');
+        resultadoSelect.innerHTML = '<option value="">Seleccionar resultado...</option>';
+        
+        if (resultados.length === 0) {
+            resultadoSelect.innerHTML = '<option value="">No hay resultados disponibles</option>';
+        } else {
+            resultados.forEach(resultado => {
+                const option = document.createElement('option');
+                option.value = resultado.cod_resultado;
+                option.textContent = `${resultado.cod_resultado} - ${resultado.nombre}`;
+                resultadoSelect.appendChild(option);
+            });
+        }
+        
+    } catch (error) {
+        console.error('❌ Error al cargar resultados:', error);
+        const resultadoSelect = document.getElementById('nueva-resultado');
+        resultadoSelect.innerHTML = '<option value="">Error al cargar resultados</option>';
+    }
+}
+
+function resetNuevaProgramacionForm() {
+    const form = document.getElementById('nueva-programacion-form');
+    if (form) form.reset();
+    
+    hideNuevaModalError();
+    
+    // Restaurar selects
+    const selects = ['nueva-ficha', 'nueva-competencia', 'nueva-resultado'];
+    selects.forEach(selectId => {
+        const select = document.getElementById(selectId);
+        if (select) {
+            select.innerHTML = '<option value="">Seleccionar...</option>';
+            select.disabled = false;
+        }
+    });
+}
+
+// --- LIMPIAR ALERTAS AL CERRAR MODALES ---
+document.addEventListener('DOMContentLoaded', () => {
+    const nuevaModal = document.getElementById('nueva-programacion-modal');
+    const editarModal = document.getElementById('programacion-modal');
+
+    if (nuevaModal) {
+        nuevaModal.addEventListener('hidden.bs.modal', () => {
+            hideNuevaModalError();
+        });
+    }
+
+    if (editarModal) {
+        editarModal.addEventListener('hidden.bs.modal', () => {
+            hideModalError();
+        });
+    }
+});
+
+
+
+// --- EXPORTAR FUNCIÓN INIT ---
+
+export { init }; 
