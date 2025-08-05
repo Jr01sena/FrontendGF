@@ -213,8 +213,8 @@ if (logoutButton) {
   });
 }
 
-// Carga inicial del dashboard
-// Carga inicial del contenido
+
+// 📦 Carga inicial
 document.addEventListener('DOMContentLoaded', () => {
   const user = JSON.parse(localStorage.getItem('user'));
   const hash = location.hash?.replace('#', '') || null;
@@ -222,22 +222,21 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log('👤 Usuario detectado:', user);
   console.log('🔗 Hash actual:', hash);
 
-  // Si ya hay hash (por ejemplo #usuarios), cargar esa vista
   if (hash) {
     loadContent(hash);
     return;
   }
 
-  // Redirección condicional basada en rol
   if (user?.id_rol === 3) {
+    // Instructores van directo al calendario
     history.replaceState(null, '', '#calendario');
     loadContent('calendario');
   } else {
+    // Otros usuarios ven dashboard por defecto
     history.replaceState(null, '', '#dashboard');
     loadContent('dashboard');
   }
 });
-
 
 window.loadContent = loadContent;
 

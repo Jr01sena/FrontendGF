@@ -530,7 +530,13 @@ userService.getRoleDistribution()
 
 
 }
-init();
+
+const user = JSON.parse(localStorage.getItem('user'));
+if (user?.id_rol !== 3) {
+  init();
+}
+
 export { init };
+
 
 // FIN MODULO GRAFICA CAMILO
