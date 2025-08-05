@@ -356,43 +356,52 @@ function createProgramacionEvent(programacion) {
 function createDayElement(date, currentMonth, today, programaciones) {
     const dayDiv = document.createElement('div');
     dayDiv.className = 'calendar-day';
-    
-    // Clases adicionales
+
     if (date.getMonth() !== currentMonth) {
         dayDiv.classList.add('other-month');
     }
-    
+
     if (isSameDay(date, today)) {
         dayDiv.classList.add('today');
     }
-    
-    // Número del día
+
     const dayNumber = document.createElement('div');
     dayNumber.className = 'day-number';
     dayNumber.textContent = date.getDate();
     dayDiv.appendChild(dayNumber);
-    
-    // Programaciones del día
-    const dayProgramaciones = programaciones.filter(prog => 
-        isSameDay(parseLocalDate(prog.fecha_programada), date)
-    );
-    
-    dayProgramaciones.forEach(prog => {
-        const eventBtn = createProgramacionEvent(prog);  // ← Ya agrega los datasets internamente
-        dayDiv.appendChild(eventBtn);
-    });
 
+    // Festivo o domingo
     const isDomingo = date.getDay() === 0;
     const isFestivo = diasFestivos.includes(formatDateForAPI(date));
 
     if (isDomingo || isFestivo) {
-        dayDiv.classList.add('dia-bloqueado');
-        dayDiv.classList.add('disabled');
+        dayDiv.classList.add('dia-bloqueado', 'disabled');
         dayDiv.title = isDomingo ? 'Domingo no programable' : 'Festivo no programable';
     }
-    
+
+    // Programaciones del día
+    const dayProgramaciones = programaciones.filter(prog =>
+        isSameDay(parseLocalDate(prog.fecha_programada), date)
+    );
+
+    dayProgramaciones.forEach(prog => {
+        const eventBtn = createProgramacionEvent(prog);
+        dayDiv.appendChild(eventBtn);
+    });
+
+    // 👉 CLICK EN CASILLA para nueva programación, solo si es habilitado
+    if (!isDomingo && !isFestivo) {
+        dayDiv.addEventListener('click', (e) => {
+            // 🛑 Evitar conflicto si se hace clic sobre un botón interno
+            if (e.target.closest('.programacion-event')) return;
+
+            openNuevaProgramacionModal(date);
+        });
+    }
+
     return dayDiv;
 }
+
 
 
 
@@ -589,31 +598,26 @@ function canEditProgramacion(programacion) {
 
 function setupModalAlertReset() {
     const nuevaModal = document.getElementById('nueva-programacion-modal');
-    const modal = document.getElementById('programacion-modal');
+    const editarModal = document.getElementById('programacion-modal');
 
-    nuevaModal.addEventListener('hidden.bs.modal', () => {
-        const nuevaError = document.getElementById('nueva-modal-error');
-        const nuevaErrorText = document.getElementById('nueva-modal-error-text');
-        if (nuevaError) {
-            nuevaError.classList.add('d-none');
-            nuevaError.style.display = 'none'; // <- clave
-        }
-        if (nuevaErrorText) nuevaErrorText.innerText = '';
-    });
+    if (nuevaModal) {
+        nuevaModal.addEventListener('shown.bs.modal', () => {
+            hideNuevaModalError();
+        });
+        nuevaModal.addEventListener('hidden.bs.modal', () => {
+            hideNuevaModalError();
+        });
+    }
 
-    modal.addEventListener('hidden.bs.modal', () => {
-        const error = document.getElementById('modal-error');
-        const errorText = document.getElementById('modal-error-text');
-        if (error) {
-            error.classList.add('d-none');
-            error.style.display = 'none'; // <- clave
-        }
-        if (errorText) errorText.innerText = '';
-    });
+    if (editarModal) {
+        editarModal.addEventListener('shown.bs.modal', () => {
+            hideModalError();
+        });
+        editarModal.addEventListener('hidden.bs.modal', () => {
+            hideModalError();
+        });
+    }
 }
-
-
-
 
 
 // --- FUNCIONES DE ESTADOS UI ---
@@ -657,15 +661,8 @@ function showModalContent() {
     document.getElementById('modal-content').classList.remove('d-none');
 }
 
-function showModalError(message) {
-    const errorDiv = document.getElementById('modal-error');
-    const errorText = document.getElementById('modal-error-text');
-    
-    if (errorDiv && errorText) {
-        errorText.innerText = message;
-        errorDiv.classList.remove('d-none');
-        errorDiv.style.display = 'block'; // <-- Forzar visibilidad
-    }
+function hideModalContent() {
+    document.getElementById('modal-content').classList.add('d-none');
 }
 
 function showNuevaModalError(message) {
@@ -673,26 +670,25 @@ function showNuevaModalError(message) {
     const errorText = document.getElementById('nueva-modal-error-text');
 
     if (errorDiv && errorText) {
-        errorText.innerText = message;
+        errorText.textContent = message;
         errorDiv.classList.remove('d-none');
-        errorDiv.style.display = 'block'; // <-- Forzar visibilidad
     }
 }
-
-
-
-
-function hideModalContent() {
-    document.getElementById('modal-content').classList.add('d-none');
-}
-
-
 
 function hideNuevaModalError() {
     const errorDiv = document.getElementById('nueva-modal-error');
     if (errorDiv) errorDiv.classList.add('d-none');
 }
 
+function showModalError(message) {
+    const errorDiv = document.getElementById('modal-error');
+    const errorText = document.getElementById('modal-error-text');
+
+    if (errorDiv && errorText) {
+        errorText.textContent = message;
+        errorDiv.classList.remove('d-none');
+    }
+}
 
 function hideModalError() {
     const errorDiv = document.getElementById('modal-error');
@@ -980,8 +976,7 @@ function resetEditMode() {
 }
 
 
-
-async function openNuevaProgramacionModal() {
+async function openNuevaProgramacionModal(selectedDate = null) {
     console.log('➕ Abriendo modal nueva programación...');
     
     try {
@@ -992,17 +987,18 @@ async function openNuevaProgramacionModal() {
         
         // Cargar fichas del instructor
         await loadFichasForNewProgramacion();
-        
-        // Establecer fecha por defecto
-        const today = new Date();
-        document.getElementById('nueva-fecha').value = formatDateForAPI(today);
-        
+
+        // Establecer la fecha (usamos la seleccionada o hoy si no hay)
+        const fecha = selectedDate instanceof Date ? selectedDate : new Date();
+        const fechaFormateada = formatDateForAPI(fecha);
+        document.getElementById('nueva-fecha').value = fechaFormateada;
+
         const fechaInput = document.getElementById('nueva-fecha');
         fechaInput.addEventListener('input', (e) => {
-            const fecha = e.target.value;
-            const fechaDate = parseLocalDate(fecha);
+            const nuevaFecha = e.target.value;
+            const fechaDate = parseLocalDate(nuevaFecha);
             const esDomingo = fechaDate.getDay() === 0;
-            const esFestivo = diasFestivos.includes(fecha);
+            const esFestivo = diasFestivos.includes(nuevaFecha);
 
             if (esDomingo || esFestivo) {
                 showNuevaModalError('No se puede programar en domingos ni festivos.');
@@ -1013,12 +1009,13 @@ async function openNuevaProgramacionModal() {
         });
 
         modal.show();
-        
+
     } catch (error) {
         console.error('❌ Error al abrir modal nueva programación:', error);
         showNuevaModalError(error.message || 'Error al cargar el formulario');
     }
 }
+
 
 
 async function createNuevaProgramacion() {
