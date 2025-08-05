@@ -475,11 +475,34 @@
   opacity: 0.9;
 }
 
-.dia-bloqueado {
-    background-color: #f8d7da;
-    opacity: 0.6;
-    cursor: not-allowed;
+.calendar-day.dia-bloqueado {
+  background: repeating-linear-gradient(
+    45deg,
+    #cfd8dc,
+    #cfd8dc 10px,
+    #b0bec5 10px,
+    #b0bec5 20px
+  );
+  color: #6c757d;
+  opacity: 0.8;
+  cursor: not-allowed;
+  position: relative;
 }
+
+.calendar-day.dia-bloqueado .day-number {
+  opacity: 0.6;
+}
+
+.calendar-day.dia-bloqueado::after {
+  content: "No disponible";
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  font-size: 10px;
+  color: #6c757d;
+  font-weight: bold;
+}
+
 
 @media (max-width: 768px) {
   .calendar-day {
