@@ -352,12 +352,10 @@ function createProgramacionEvent(programacion) {
 }
 
 
-
 function createDayElement(date, currentMonth, today, programaciones) {
     const dayDiv = document.createElement('div');
     dayDiv.className = 'calendar-day';
     
-    // Clases adicionales
     if (date.getMonth() !== currentMonth) {
         dayDiv.classList.add('other-month');
     }
@@ -366,38 +364,30 @@ function createDayElement(date, currentMonth, today, programaciones) {
         dayDiv.classList.add('today');
     }
     
-    // Número del día
     const dayNumber = document.createElement('div');
     dayNumber.className = 'day-number';
     dayNumber.textContent = date.getDate();
     dayDiv.appendChild(dayNumber);
     
-    // Si es un día hábil (no domingo ni festivo), permitir abrir el modal
-    const esDomingo = date.getDay() === 0;
-    const esFestivo = diasFestivos.includes(formatDateForAPI(date));
-    if (!esDomingo && !esFestivo) {
+    const isDomingo = date.getDay() === 0;
+    const isFestivo = diasFestivos.includes(formatDateForAPI(date));
+
+    if (!isDomingo && !isFestivo) {
         dayDiv.addEventListener('click', () => openNuevaProgramacionModal(date));
+    } else {
+        dayDiv.classList.add('dia-bloqueado', 'disabled');
+        dayDiv.title = isDomingo ? 'Domingo no programable' : 'Festivo no programable';
     }
 
-    // Programaciones del día
     const dayProgramaciones = programaciones.filter(prog => 
         isSameDay(parseLocalDate(prog.fecha_programada), date)
     );
     
     dayProgramaciones.forEach(prog => {
-        const eventBtn = createProgramacionEvent(prog);  // ← Ya agrega los datasets internamente
+        const eventBtn = createProgramacionEvent(prog);
         dayDiv.appendChild(eventBtn);
     });
 
-    const isDomingo = date.getDay() === 0;
-    const isFestivo = diasFestivos.includes(formatDateForAPI(date));
-
-    if (isDomingo || isFestivo) {
-        dayDiv.classList.add('dia-bloqueado');
-        dayDiv.classList.add('disabled');
-        dayDiv.title = isDomingo ? 'Domingo no programable' : 'Festivo no programable';
-    }
-    
     return dayDiv;
 }
 
