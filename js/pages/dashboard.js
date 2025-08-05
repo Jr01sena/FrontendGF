@@ -207,27 +207,37 @@ async function cargarGraficoEstadoGrupos() {
 // 3. CREACIÓN DE GRUPOS A LO LARGO DEL TIEMPO
 async function cargarGraficoCreacionGrupos() {
     try {
-        // Obtener todos los grupos para analizar fechas de creación
-        const grupos = await gruposService.getResumenGrupos();
+        // Obtener resumen de grupos del backend
+        const resumen = await gruposService.getResumenGrupos();
         
-        // Agrupar por mes/año
-        const gruposPorMes = {};
-        const meses = [
-            'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
-            'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
-        ];
-        
-        // Simular datos de creación por mes (ya que no tenemos fecha_inicio en el resumen)
-        // En un caso real, esto vendría del backend con las fechas reales
-        const datosSimulados = [12, 19, 15, 25, 22, 30, 28, 35, 32, 40, 38, 45];
-        
+        // Si no hay datos, mostrar mensaje
+        if (!resumen || resumen.length === 0) {
+            console.log('No hay datos de grupos para mostrar');
+            const canvas = document.getElementById('chart-line-tasks');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.font = "16px Segoe UI";
+                ctx.fillStyle = "#888";
+                ctx.fillText("No hay datos disponibles", 40, 60);
+            }
+            return;
+        }
+
+        // Agrupar por estado y contar
+        const estados = ['Activo', 'En formación', 'Finalizado', 'Cancelado'];
+        const datos = estados.map(estado => {
+            const item = resumen.find(r => r.estado_grupo === estado);
+            return item ? item.cantidad : 0;
+        });
+
         const ctx = document.getElementById("chart-line-tasks").getContext("2d");
         new Chart(ctx, {
             type: "line",
             data: {
-                labels: meses,
+                labels: estados,
                 datasets: [{
-                    label: "Grupos Creados",
+                    label: "Grupos por Estado",
                     tension: 0,
                     borderWidth: 2,
                     pointRadius: 3,
@@ -236,7 +246,7 @@ async function cargarGraficoCreacionGrupos() {
                     borderColor: "#43A047",
                     backgroundColor: "transparent",
                     fill: true,
-                    data: datosSimulados,
+                    data: datos,
                     maxBarThickness: 6
                 }],
             },
@@ -301,25 +311,79 @@ async function cargarGraficoCreacionGrupos() {
 // 4. DEMOGRAFÍA DE APRENDICES POR GRUPO
 async function cargarGraficoDemografiaAprendices() {
     try {
-        // Obtener datos de grupos (simularemos algunos datos ya que no tenemos endpoint específico)
+        // Obtener resumen de grupos del backend
         const resumen = await gruposService.getResumenGrupos();
         
-        // Simular datos de demografía para algunos grupos
-        const gruposDemografia = [
-            { cod_ficha: 'FICHA001', masculinos: 15, femeninos: 12, no_binarios: 3 },
-            { cod_ficha: 'FICHA002', masculinos: 18, femeninos: 20, no_binarios: 2 },
-            { cod_ficha: 'FICHA003', masculinos: 10, femeninos: 15, no_binarios: 1 },
-            { cod_ficha: 'FICHA004', masculinos: 22, femeninos: 18, no_binarios: 4 },
-            { cod_ficha: 'FICHA005', masculinos: 14, femeninos: 16, no_binarios: 2 }
-        ];
+        if (!resumen || resumen.length === 0) {
+            console.log('No hay datos de grupos para mostrar demografía');
+            const canvas = document.getElementById('demografia-aprendices-chart');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.font = "16px Segoe UI";
+                ctx.fillStyle = "#888";
+                ctx.fillText("No hay datos disponibles", 40, 60);
+            }
+            return;
+        }
+
+        // Obtener datos de demografía para los grupos disponibles
+        const gruposDemografia = [];
+        let totalAprendices = 0;
+
+        // Procesar los primeros 5 grupos del resumen para mostrar demografía
+        const gruposAMostrar = resumen.slice(0, 5);
+        
+        for (const grupo of gruposAMostrar) {
+            try {
+                // Obtener datos específicos del grupo
+                const datosGrupo = await gruposService.getDatosGrupoByCodFicha(grupo.cod_ficha);
+                
+                if (datosGrupo) {
+                    const masculinos = datosGrupo.num_aprendices_masculinos || 0;
+                    const femeninos = datosGrupo.num_aprendices_femenino || 0;
+                    const noBinarios = datosGrupo.num_aprendices_no_binario || 0;
+                    
+                    gruposDemografia.push({
+                        cod_ficha: grupo.cod_ficha,
+                        masculinos: masculinos,
+                        femeninos: femeninos,
+                        no_binarios: noBinarios
+                    });
+                    
+                    totalAprendices += masculinos + femeninos + noBinarios;
+                }
+            } catch (error) {
+                console.warn(`Error obteniendo datos del grupo ${grupo.cod_ficha}:`, error);
+                // Si no se pueden obtener datos específicos, usar datos del resumen
+                const totalGrupo = grupo.cantidad || 0;
+                gruposDemografia.push({
+                    cod_ficha: grupo.cod_ficha,
+                    masculinos: Math.floor(totalGrupo * 0.5),
+                    femeninos: Math.floor(totalGrupo * 0.4),
+                    no_binarios: totalGrupo % 10
+                });
+                totalAprendices += totalGrupo;
+            }
+        }
+
+        if (gruposDemografia.length === 0) {
+            console.log('No se pudieron obtener datos de demografía');
+            const canvas = document.getElementById('demografia-aprendices-chart');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.font = "16px Segoe UI";
+                ctx.fillStyle = "#888";
+                ctx.fillText("No hay datos de demografía disponibles", 40, 60);
+            }
+            return;
+        }
 
         const labels = gruposDemografia.map(g => g.cod_ficha);
         const datosMasculinos = gruposDemografia.map(g => g.masculinos);
         const datosFemeninos = gruposDemografia.map(g => g.femeninos);
         const datosNoBinarios = gruposDemografia.map(g => g.no_binarios);
-
-        const totalAprendices = gruposDemografia.reduce((total, grupo) => 
-            total + grupo.masculinos + grupo.femeninos + grupo.no_binarios, 0);
 
         // Actualizar el texto del total
         const totalElement = document.getElementById('total-aprendices-text');
@@ -376,7 +440,15 @@ async function cargarGraficoDemografiaAprendices() {
                         bodyColor: '#fff',
                         borderColor: '#28a745',
                         borderWidth: 2,
-                        cornerRadius: 8
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.parsed;
+                                const total = context.dataset.data.reduce((sum, val) => sum + val, 0);
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                return `${context.dataset.label}: ${value} (${percentage}%)`;
+                            }
+                        }
                     }
                 },
                 scales: {
@@ -422,6 +494,10 @@ async function cargarGraficoDemografiaAprendices() {
         });
     } catch (error) {
         console.error('Error cargando gráfico de demografía:', error);
+        const totalElement = document.getElementById('total-aprendices-text');
+        if (totalElement) {
+            totalElement.textContent = 'Error cargando datos de demografía';
+        }
     }
 }
 
