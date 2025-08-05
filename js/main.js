@@ -215,8 +215,16 @@ if (logoutButton) {
 
 // Carga inicial del dashboard
 document.addEventListener('DOMContentLoaded', () => {
-  loadContent('dashboard');
+  const user = JSON.parse(localStorage.getItem('user'));
+
+  // Si es rol 3 (instructor), iniciar en Calendario
+  if (user?.id_rol === 3) {
+    loadContent('calendario');
+  } else {
+    loadContent('dashboard');
+  }
 });
+
 
 window.loadContent = loadContent;
 
