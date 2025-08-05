@@ -1,6 +1,12 @@
 import { authService } from './api/auth.service.js';
 
-// GUARDIÁN DE AUTENTICACIÓN
+// 🔒 Función de ayuda para validar el rol
+const isRol = (rol) => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  return user?.id_rol === rol;
+};
+
+// 🚪 GUARDIÁN DE AUTENTICACIÓN
 (() => {
   const token = localStorage.getItem('accessToken');
   if (!token) {
@@ -31,13 +37,19 @@ const pageNames = {
 // ✅ Función principal para cargar contenido dinámico
 const loadContent = async (page) => {
   try {
+    // Restricción de seguridad adicional para evitar que instructores carguen dashboard
+    if (page === 'dashboard' && isRol(3)) {
+      console.warn('Acceso denegado al dashboard para rol 3');
+      return loadContent('calendario');
+    }
+
     const response = await fetch(`pages/${page}.html`);
     if (!response.ok) throw new Error(`Error de red: ${response.status} - ${response.statusText}`);
 
     const html = await response.text();
     mainContent.innerHTML = html;
 
-    // Marcar navegación activa
+    // Navegación activa
     document.querySelectorAll('.nav-link[data-page]').forEach(link => {
       const isActive = link.dataset.page === page;
       link.classList.toggle('active', isActive);
@@ -51,7 +63,7 @@ const loadContent = async (page) => {
       breadcrumb.textContent = pageNames[page];
     }
 
-    // Cargar JS correspondiente
+    // Cargar JS de la página
     await loadPageModule(page);
 
   } catch (error) {
@@ -80,11 +92,12 @@ const loadContent = async (page) => {
   }
 };
 
-// ✅ Import dinámico del módulo JS correspondiente a cada página
+// ✅ Import dinámico del JS por página
 const loadPageModule = async (page) => {
   try {
     switch (page) {
       case 'dashboard':
+        if (isRol(3)) return;
         const dashboardModule = await import('./pages/dashboard.js');
         if (dashboardModule.init) dashboardModule.init();
         break;
@@ -147,7 +160,39 @@ const loadPageModule = async (page) => {
   }
 };
 
-// 🔗 Navegación lateral
+// 📦 Carga inicial y lógica de seguridad por rol
+document.addEventListener('DOMContentLoaded', () => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  const hash = location.hash?.replace('#', '') || null;
+
+  console.log('👤 Usuario detectado:', user);
+  console.log('🔗 Hash actual:', hash);
+
+  // Ocultar accesos según rol
+  if (user?.id_rol === 3) {
+    const pagesToHide = ['dashboard', 'usuarios', 'centros', 'cargararchivos', 'grupos', 'metas'];
+    pagesToHide.forEach(page => {
+      const navItem = document.querySelector(`[data-page="${page}"]`);
+      if (navItem) {
+        navItem.closest('.nav-item').style.display = 'none';
+      }
+    });
+  }
+
+  // Redirección segura
+  if (hash === 'dashboard' && isRol(3)) {
+    history.replaceState(null, '', '#calendario');
+    loadContent('calendario');
+  } else if (hash) {
+    loadContent(hash);
+  } else {
+    const defaultPage = isRol(3) ? 'calendario' : 'dashboard';
+    history.replaceState(null, '', `#${defaultPage}`);
+    loadContent(defaultPage);
+  }
+});
+
+// Navegación lateral dinámica
 navLinks.addEventListener('click', (event) => {
   const link = event.target.closest('a[data-page]');
   if (link) {
@@ -156,35 +201,11 @@ navLinks.addEventListener('click', (event) => {
   }
 });
 
-// 🔒 Logout
+// Logout
 const logoutButton = document.getElementById('logout-button');
 logoutButton?.addEventListener('click', (e) => {
   e.preventDefault();
   authService.logout();
-});
-
-// 📦 Carga inicial
-document.addEventListener('DOMContentLoaded', () => {
-  const user = JSON.parse(localStorage.getItem('user'));
-  const hash = location.hash?.replace('#', '') || null;
-
-  console.log('👤 Usuario detectado:', user);
-  console.log('🔗 Hash actual:', hash);
-
-  if (hash) {
-    loadContent(hash);
-    return;
-  }
-
-  if (user?.id_rol === 3) {
-    // Instructores van directo al calendario
-    history.replaceState(null, '', '#calendario');
-    loadContent('calendario');
-  } else {
-    // Otros usuarios ven dashboard por defecto
-    history.replaceState(null, '', '#dashboard');
-    loadContent('dashboard');
-  }
 });
 
 window.loadContent = loadContent;

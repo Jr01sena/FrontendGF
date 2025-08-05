@@ -236,21 +236,6 @@
     });
   </script>
 
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const user = JSON.parse(localStorage.getItem('user'));
-
-      // Redirigir automáticamente a Calendario si es rol 3
-      if (user?.id_rol === 3) {
-        // Evita que se cargue otra vista por defecto
-        setTimeout(() => {
-          loadPage('calendario');
-        }, 100); // pequeño delay para asegurar que el DOM y scripts estén listos
-      }
-    });
-  </script>
-
-
 
   <!-- ✅ Tom Select CSS -->
   <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
