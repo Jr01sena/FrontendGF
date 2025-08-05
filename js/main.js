@@ -29,26 +29,14 @@ const pageNames = {
   'sign-up': 'Sign Up'
 };
 
-
-
-/**
- * Carga dinámicamente el contenido HTML de la página indicada y, si es necesario,
- * importa y ejecuta el módulo JS correspondiente para enganchar la lógica de la vista.
- * Esto permite que cada vista tenga su propio JS y listeners, incluso cuando se carga dinámicamente.
- */
 const loadContent = async (page) => {
-
   try {
     const response = await fetch(`pages/${page}.html`);
-
-
-    if (!response.ok) {
-      throw new Error(`Error de red: ${response.status} - ${response.statusText}`);
-    }
+    if (!response.ok) throw new Error(`Error de red: ${response.status} - ${response.statusText}`);
     const html = await response.text();
     mainContent.innerHTML = html;
-    
-    // Actualizar estado activo en navegación
+
+    // Actualizar navegación
     document.querySelectorAll('.nav-link[data-page]').forEach(link => {
       if (link.dataset.page === page) {
         link.classList.add('active', 'bg-success', 'text-white');
@@ -59,152 +47,136 @@ const loadContent = async (page) => {
 
     // Actualizar breadcrumb
     const breadcrumb = document.getElementById('breadcrumb-current');
-    if (breadcrumb && pageNames[page]) {
-      breadcrumb.textContent = pageNames[page];
-    }
+    if (breadcrumb && pageNames[page]) breadcrumb.textContent = pageNames[page];
 
-    // Cargar módulos JavaScript correspondientes
+    // Cargar JS correspondiente
     await loadPageModule(page);
 
   } catch (error) {
     mainContent.innerHTML = `
       <div class="container-fluid py-4">
-        <div class="row">
-          <div class="col-12">
-            <div class="card border-danger">
-              <div class="card-body text-center">
-                <h3 class="text-danger mb-3">
-                  <i class="material-symbols-rounded me-2">error</i>
-                  No se pudo cargar el contenido
-                </h3>
-                <p class="text-muted">Página: <strong>${page}</strong></p>
-                <p class="text-muted">Error: ${error.message}</p>
-                <button class="btn btn-success" onclick="location.reload()">
-                  <i class="material-symbols-rounded me-2">refresh</i>
-                  Recargar página
-                </button>
-              </div>
-            </div>
+        <div class="row"><div class="col-12"><div class="card border-danger">
+          <div class="card-body text-center">
+            <h3 class="text-danger mb-3"><i class="material-symbols-rounded me-2">error</i>No se pudo cargar el contenido</h3>
+            <p class="text-muted">Página: <strong>${page}</strong></p>
+            <p class="text-muted">Error: ${error.message}</p>
+            <button class="btn btn-success" onclick="location.reload()">
+              <i class="material-symbols-rounded me-2">refresh</i>Recargar página
+            </button>
           </div>
-        </div>
-      </div>
-    `;
+        </div></div></div>
+      </div>`;
   }
 };
 
-/**
- * Carga el módulo JavaScript específico para cada página
- * @param {string} page - Nombre de la página
- */
 const loadPageModule = async (page) => {
   try {
     switch (page) {
       case 'dashboard':
         const dashboardModule = await import('./pages/dashboard.js');
-        if (dashboardModule.init) {
-          dashboardModule.init();
-        }
+        dashboardModule.init?.();
         break;
-
       case 'usuarios':
         const usersModule = await import('./pages/users.js');
-        if (usersModule.init) {
-          usersModule.init();
-        }
+        usersModule.init?.();
         break;
-
       case 'centros':
         const centrosModule = await import('./pages/centros.js');
-        if (centrosModule.init) {
-          centrosModule.init();
-        }
+        centrosModule.init?.();
         break;
-
       case 'ambientes':
         const ambientesModule = await import('./pages/ambientes.js');
-        if (ambientesModule.init) {
-          ambientesModule.init();
-        }
+        ambientesModule.init?.();
         break;
-
       case 'programas':
         const programasModule = await import('./pages/programas.js');
-        if (programasModule.init) {
-          programasModule.init();
-        }
+        programasModule.init?.();
         break;
-
       case 'competencias':
         const competenciasModule = await import('./pages/competencias.js');
-        if (competenciasModule.init) {
-          competenciasModule.init();
-        }
+        competenciasModule.init?.();
         break;
-      
       case 'metas':
         const metasModule = await import('./pages/metas.js');
-        if (metasModule.init) {
-          metasModule.init();
-        }
+        metasModule.init?.();
         break;
-
-
       case 'grupos':
         const gruposModule = await import('./pages/grupos.js');
-        if (gruposModule.init) {
-          // Pequeño delay para asegurar que el DOM esté listo
-          setTimeout(() => {
-            gruposModule.init();
-          }, 50);
-        }
+        setTimeout(() => gruposModule.init?.(), 50);
         break;
-
       case 'calendario':
         const calendarioModule = await import('./pages/calendario.js');
-        if (calendarioModule.init) {
-          // Pequeño delay para asegurar que el DOM esté listo
-          setTimeout(() => {
-            calendarioModule.init();
-          }, 50);
-        }
+        setTimeout(() => calendarioModule.init?.(), 50);
         break;
-
       case 'cargararchivos':
         const cargararchivosModule = await import('./pages/cargararchivos.js');
-        if (cargararchivosModule.init) {
-          cargararchivosModule.init();
-        }
+        cargararchivosModule.init?.();
         break;
-
       case 'profile':
         const profileModule = await import('./pages/profile.js');
-        if (profileModule.init) {
-          profileModule.init();
-        }
+        profileModule.init?.();
         break;
-
-
-      case 'billing':
-      case 'notifications':
-        break;
-
       default:
+        break;
     }
   } catch (error) {
+    console.error(`❌ Error al cargar el módulo de la página '${page}':`, error);
   }
 };
 
-// Event listener para navegación
-navLinks.addEventListener('click', (event) => {
+// ✅ EVENTOS - Todos en el mismo bloque
+document.addEventListener('DOMContentLoaded', async () => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  const hash = location.hash?.replace('#', '') || null;
+
+  if (!user) {
+    console.warn('⏳ Usuario no encontrado, recargando...');
+    setTimeout(() => location.reload(), 50);
+    return;
+  }
+
+  // 👤 Ocultar menús para rol 3
+  if (user.id_rol === 3) {
+    ['dashboard', 'usuarios', 'centros', 'cargararchivos', 'grupos', 'metas'].forEach(page => {
+      const item = document.querySelector(`[data-page="${page}"]`);
+      if (item) item.closest('.nav-item').style.display = 'none';
+    });
+
+    // ⛔ Bloquear clic manual al dashboard
+    const dashboardLink = document.querySelector('[data-page="dashboard"]');
+    if (dashboardLink) {
+      dashboardLink.addEventListener('click', async e => {
+        e.preventDefault();
+        await loadContent('calendario');
+      });
+    }
+  }
+
+  // 🚦 Cargar la vista inicial basada en el rol
+  if (user.id_rol === 3) {
+    if (hash !== 'calendario') location.hash = '#calendario';
+    await loadContent('calendario');
+  } else {
+    if (hash && pageNames[hash]) {
+      await loadContent(hash);
+    } else {
+      location.hash = '#dashboard';
+      await loadContent('dashboard');
+    }
+  }
+});
+
+// Navegación lateral
+navLinks.addEventListener('click', async (event) => {
   const link = event.target.closest('a[data-page]');
   if (link) {
     event.preventDefault();
     const pageToLoad = link.dataset.page;
-    loadContent(pageToLoad);
+    await loadContent(pageToLoad);
   }
 });
 
-// Event listener para logout
+// Logout
 const logoutButton = document.getElementById('logout-button');
 if (logoutButton) {
   logoutButton.addEventListener('click', (event) => {
@@ -213,53 +185,4 @@ if (logoutButton) {
   });
 }
 
-
-// 📦 Carga inicial
-document.addEventListener('DOMContentLoaded', () => {
-  const user = JSON.parse(localStorage.getItem('user'));
-  const hash = location.hash?.replace('#', '') || null;
-
-  // 👤 Mostrar iniciales en el avatar (opcional)
-  const avatar = document.getElementById("userAvatar");
-  if (user?.nombre_completo && avatar) {
-    const partes = user.nombre_completo.trim().split(" ");
-    const iniciales = (partes[0][0] + (partes[1]?.[0] || '')).toUpperCase();
-    avatar.textContent = iniciales;
-  }
-
-  // 🔒 Ocultar secciones para rol 3
-  if (user?.id_rol === 3) {
-    const pagesToHide = [
-      'dashboard', 'usuarios', 'centros',
-      'cargararchivos', 'grupos', 'metas'
-    ];
-    pagesToHide.forEach(page => {
-      const navItem = document.querySelector(`[data-page="${page}"]`);
-      if (navItem) {
-        navItem.closest('.nav-item').style.display = 'none';
-      }
-    });
-  }
-
-  // 🚦 Redirección basada en rol
-  if (user?.id_rol === 3) {
-    // Solo permitir acceso a "calendario" desde la URL o forzarlo
-    if (hash !== 'calendario') {
-      location.hash = '#calendario';
-      loadContent('calendario');
-    } else {
-      loadContent('calendario');
-    }
-  } else {
-    // Para roles 1 y 2
-    if (hash && pageNames[hash]) {
-      loadContent(hash);
-    } else {
-      location.hash = '#dashboard';
-      loadContent('dashboard');
-    }
-  }
-});
-
 window.loadContent = loadContent;
-
