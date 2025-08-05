@@ -217,14 +217,47 @@ if (logoutButton) {
 // 📦 Carga inicial
 document.addEventListener('DOMContentLoaded', () => {
   const user = JSON.parse(localStorage.getItem('user'));
+  const hash = location.hash?.replace('#', '') || null;
 
-  // Forzamos siempre el redireccionamiento según el rol
+  // 👤 Mostrar iniciales en el avatar (opcional)
+  const avatar = document.getElementById("userAvatar");
+  if (user?.nombre_completo && avatar) {
+    const partes = user.nombre_completo.trim().split(" ");
+    const iniciales = (partes[0][0] + (partes[1]?.[0] || '')).toUpperCase();
+    avatar.textContent = iniciales;
+  }
+
+  // 🔒 Ocultar secciones para rol 3
   if (user?.id_rol === 3) {
-    window.location.hash = '#calendario';
-    loadContent('calendario');
+    const pagesToHide = [
+      'dashboard', 'usuarios', 'centros',
+      'cargararchivos', 'grupos', 'metas'
+    ];
+    pagesToHide.forEach(page => {
+      const navItem = document.querySelector(`[data-page="${page}"]`);
+      if (navItem) {
+        navItem.closest('.nav-item').style.display = 'none';
+      }
+    });
+  }
+
+  // 🚦 Redirección basada en rol
+  if (user?.id_rol === 3) {
+    // Solo permitir acceso a "calendario" desde la URL o forzarlo
+    if (hash !== 'calendario') {
+      location.hash = '#calendario';
+      loadContent('calendario');
+    } else {
+      loadContent('calendario');
+    }
   } else {
-    window.location.hash = '#dashboard';
-    loadContent('dashboard');
+    // Para roles 1 y 2
+    if (hash && pageNames[hash]) {
+      loadContent(hash);
+    } else {
+      location.hash = '#dashboard';
+      loadContent('dashboard');
+    }
   }
 });
 
