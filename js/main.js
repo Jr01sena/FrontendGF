@@ -214,30 +214,29 @@ if (logoutButton) {
 }
 
 // Carga inicial del dashboard
+// Carga inicial del contenido
 document.addEventListener('DOMContentLoaded', () => {
   const user = JSON.parse(localStorage.getItem('user'));
+  const hash = location.hash?.replace('#', '') || null;
+
   console.log('👤 Usuario detectado:', user);
+  console.log('🔗 Hash actual:', hash);
 
-  const currentPage = location.hash?.replace('#', '') || null;
-  console.log('🔍 Página desde hash:', currentPage);
-
-  if (currentPage) {
-    console.log('📄 Cargando desde hash:', currentPage);
-    loadContent(currentPage);
+  // Si ya hay hash (por ejemplo #usuarios), cargar esa vista
+  if (hash) {
+    loadContent(hash);
     return;
   }
 
+  // Redirección condicional basada en rol
   if (user?.id_rol === 3) {
-    console.log('➡️ Redirigiendo a CALENDARIO por rol 3');
-    loadContent('calendario');
     history.replaceState(null, '', '#calendario');
+    loadContent('calendario');
   } else {
-    console.log('➡️ Redirigiendo a DASHBOARD');
-    loadContent('dashboard');
     history.replaceState(null, '', '#dashboard');
+    loadContent('dashboard');
   }
 });
-
 
 
 window.loadContent = loadContent;
