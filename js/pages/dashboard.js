@@ -234,7 +234,7 @@ new Chart(ctx3, {
 });
 
 // INICIO MODULO GRAFICA CAMILO
-const token = localStorage.getItem('token');
+const token = localStorage.getItem('accessToken');
 if (!token) {
     window.location.href = '/ruta-a-tu-login.html';
     return;
@@ -292,13 +292,34 @@ fetch('https://api.gestion-formacion.tech/programa/get-all?limit=10000&offset=0'
     const programas = programasArr
         .map(p => ({
             nombre: p.nombre,
-            horas: Math.round((parseFloat(p.horas_lectivas) || 0) + (parseFloat(p.horas_productivas) || 0))
+            horas_lectivas: parseFloat(p.horas_lectivas) || 0,
+            horas_productivas: parseFloat(p.horas_productivas) || 0,
+            total: Math.round((parseFloat(p.horas_lectivas) || 0) + (parseFloat(p.horas_productivas) || 0))
         }))
-        .filter(p => !isNaN(p.horas) && p.horas > 0)
-        .sort((a, b) => b.horas - a.horas)
-        .slice(0, 5);
+        .filter(p => !isNaN(p.total) && p.total > 0)
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 5)
+        .map((p, idx) => ({
+            ...p,
+            ranking: idx + 1
+        }));
 
-    const maxHoras = Math.max(...programas.map(p => p.horas), 10);
+    const rankingEmojis = ['🥇', '🥈', '🥉', '⭐️', '🏅'];
+    const etiquetasY = programas.map((p, i) => `${rankingEmojis[i] || ''} ${p.nombre}`);
+
+    if (programas.length === 0) {
+        const canvas = document.getElementById('top-programas-bar');
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.font = "18px Segoe UI";
+            ctx.fillStyle = "#888";
+            ctx.fillText("No hay datos para mostrar", 40, 60);
+        }
+        return;
+    }
+
+    const maxHoras = Math.max(...programas.map(p => p.total), 10);
     let step = 100;
     if (maxHoras > 1000) step = 1000;
     else if (maxHoras > 500) step = 500;
@@ -316,16 +337,13 @@ fetch('https://api.gestion-formacion.tech/programa/get-all?limit=10000&offset=0'
     Chart.defaults.elements.bar.backgroundColor = barraColors;
     Chart.defaults.elements.bar.borderSkipped = false;
 
-    const etiquetasY = programas.map((p, i) => `${posiciones[i] || (i+1) + '°'} ${p.nombre}`);
-const etiquetasConPosicion = programas.map((p, i) => `${posiciones[i] || (i+1) + '°'} ${p.nombre}`);
-
     new Chart(ctx, {
         type: 'bar',
         data: {
             labels: etiquetasY,
             datasets: [{
                 label: 'Duración Total (horas)',
-                data: programas.map(p => p.horas),
+                data: programas.map(p => p.total),
                 backgroundColor: barraColors,
                 borderColor: '#fff',
                 borderWidth: 2,
@@ -340,17 +358,27 @@ const etiquetasConPosicion = programas.map((p, i) => `${posiciones[i] || (i+1) +
                 legend: { display: false },
                 title: { display: false },
                 tooltip: {
-                    backgroundColor: '#222',
-                    titleColor: '#fff',
-                    bodyColor: '#fff',
+                    backgroundColor: '#fff',
                     borderColor: '#28a745',
-                    borderWidth: 1,
+                    borderWidth: 2,
+                    titleColor: '#222',
+                    bodyColor: '#222',
+                    titleFont: { weight: 'bold', size: 16 },
+                    bodyFont: { size: 15 },
+                    padding: 16,
+                    displayColors: false,
                     callbacks: {
                         title: function(context) {
-                            return etiquetasConPosicion[context[0].dataIndex];
+                            const p = programas[context[0].dataIndex];
+                            return `🏆 ${p.ranking}° ${p.nombre}`;
                         },
                         label: function(context) {
-                            return ` ${context.parsed.x} horas`;
+                            const p = programas[context.dataIndex];
+                            return [
+                                `Lectivas: ${p.horas_lectivas} h`,
+                                `Productivas: ${p.horas_productivas} h`,
+                                `Total: ${p.total} h`
+                            ];
                         }
                     }
                 }
@@ -370,8 +398,13 @@ const etiquetasConPosicion = programas.map((p, i) => `${posiciones[i] || (i+1) +
                 y: {
                     title: { display: false },
                     ticks: {
-                        font: { size: 15, weight: 'bold', family: 'Segoe UI, Arial, sans-serif' },
-                        color: '#222',
+                        font: { size: 18, weight: 'bold', family: 'Segoe UI, Arial, sans-serif' },
+                        color: '#222', 
+                        padding: 18,
+                        callback: function(value, index, ticks) {
+                            const label = this.getLabelForValue(value);
+                            return label.length > 38 ? label.slice(0, 35) + '...' : label;
+                        }
                     },
                     grid: {
                         display: false,
@@ -488,7 +521,7 @@ userService.getRoleDistribution()
 })
 .catch(err => {
     console.error('Error cargando distribución de roles:', err);
-    // Mostrar mensaje de error en el elemento
+
     const totalUsersElement = document.getElementById('total-users-text');
     if (totalUsersElement) {
         totalUsersElement.textContent = 'Error cargando datos de usuarios';
@@ -499,7 +532,5 @@ userService.getRoleDistribution()
 }
 init();
 export { init };
-
-localStorage.setItem('token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwicm9sIjoxLCJleHAiOjE3NTQxODgyMjF9.HkQCtPTMns0oKZfwmcZp5K3nvQJoK55oVL5TT38UUTg');
 
 // FIN MODULO GRAFICA CAMILO
