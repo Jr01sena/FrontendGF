@@ -117,21 +117,42 @@ async function cargarGraficoCentrosPorRegional() {
 // 2. ESTADO ACTUAL DE GRUPOS DE FORMACIÓN
 async function cargarGraficoEstadoGrupos() {
     try {
-        // Obtener resumen de grupos
-        const resumen = await gruposService.getResumenGrupos();
-        
-        // Preparar datos para el gráfico
-        const estados = ['Activo', 'En formación', 'Finalizado', 'Cancelado'];
-        const datos = estados.map(estado => {
-            const item = resumen.find(r => r.estado_grupo === estado);
-            return item ? item.cantidad : 0;
+        // Obtener estadísticas de estados de grupos del backend
+        const response = await fetch('https://api.gestion-formacion.tech/grupo/estadisticas/estados', {
+            headers: {
+                'accept': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+            }
         });
+        
+        if (!response.ok) {
+            throw new Error(`Error HTTP: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (!data || data.length === 0) {
+            console.log('No hay datos de estados de grupos');
+            const canvas = document.getElementById('chart-line');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.font = "16px Segoe UI";
+                ctx.fillStyle = "#888";
+                ctx.fillText("No hay datos disponibles", 40, 60);
+            }
+            return;
+        }
+
+        // Preparar datos para el gráfico
+        const labels = data.map(item => item.estado || 'Sin Estado');
+        const valores = data.map(item => item.cantidad || 0);
 
         const ctx = document.getElementById("chart-line").getContext("2d");
         new Chart(ctx, {
             type: "bar",
             data: {
-                labels: estados,
+                labels: labels,
                 datasets: [{
                     label: "Grupos",
                     tension: 0,
@@ -142,7 +163,7 @@ async function cargarGraficoEstadoGrupos() {
                     borderColor: "#43A047",
                     backgroundColor: "#43A047",
                     fill: true,
-                    data: datos,
+                    data: valores,
                     maxBarThickness: 6
                 }],
             },
@@ -207,12 +228,22 @@ async function cargarGraficoEstadoGrupos() {
 // 3. CREACIÓN DE GRUPOS A LO LARGO DEL TIEMPO
 async function cargarGraficoCreacionGrupos() {
     try {
-        // Obtener resumen de grupos del backend
-        const resumen = await gruposService.getResumenGrupos();
+        // Obtener estadísticas por modalidad y nivel del backend
+        const response = await fetch('https://api.gestion-formacion.tech/grupo/estadisticas/modalidad-nivel', {
+            headers: {
+                'accept': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+            }
+        });
         
-        // Si no hay datos, mostrar mensaje
-        if (!resumen || resumen.length === 0) {
-            console.log('No hay datos de grupos para mostrar');
+        if (!response.ok) {
+            throw new Error(`Error HTTP: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (!data || data.length === 0) {
+            console.log('No hay datos de modalidades para mostrar');
             const canvas = document.getElementById('chart-line-tasks');
             if (canvas) {
                 const ctx = canvas.getContext('2d');
@@ -224,20 +255,17 @@ async function cargarGraficoCreacionGrupos() {
             return;
         }
 
-        // Agrupar por estado y contar
-        const estados = ['Activo', 'En formación', 'Finalizado', 'Cancelado'];
-        const datos = estados.map(estado => {
-            const item = resumen.find(r => r.estado_grupo === estado);
-            return item ? item.cantidad : 0;
-        });
+        // Preparar datos para el gráfico
+        const labels = data.map(item => `${item.modalidad || 'Sin Modalidad'} - ${item.nombre_nivel || 'Sin Nivel'}`);
+        const valores = data.map(item => item.cantidad || 0);
 
         const ctx = document.getElementById("chart-line-tasks").getContext("2d");
         new Chart(ctx, {
             type: "line",
             data: {
-                labels: estados,
+                labels: labels,
                 datasets: [{
-                    label: "Grupos por Estado",
+                    label: "Grupos por Modalidad y Nivel",
                     tension: 0,
                     borderWidth: 2,
                     pointRadius: 3,
@@ -246,7 +274,7 @@ async function cargarGraficoCreacionGrupos() {
                     borderColor: "#43A047",
                     backgroundColor: "transparent",
                     fill: true,
-                    data: datos,
+                    data: valores,
                     maxBarThickness: 6
                 }],
             },
@@ -295,7 +323,7 @@ async function cargarGraficoCreacionGrupos() {
                             color: '#737373',
                             padding: 10,
                             font: {
-                                size: 14,
+                                size: 12,
                                 lineHeight: 2
                             },
                         }
@@ -311,52 +339,93 @@ async function cargarGraficoCreacionGrupos() {
 // 4. DEMOGRAFÍA DE APRENDICES POR GRUPO
 async function cargarGraficoDemografiaAprendices() {
     try {
-        // Obtener resumen de grupos del backend
-        const resumen = await gruposService.getResumenGrupos();
+        // Obtener el usuario actual para obtener su centro
+        const userString = localStorage.getItem('user');
+        if (!userString) {
+            throw new Error('No se encontró información del usuario');
+        }
         
-        if (!resumen || resumen.length === 0) {
-            console.log('No hay datos de grupos para mostrar demografía');
+        const user = JSON.parse(userString);
+        const codCentro = user.cod_centro;
+        
+        if (!codCentro) {
+            throw new Error('El usuario no tiene un centro asignado');
+        }
+
+        // Obtener grupos del centro del usuario
+        const response = await fetch(`https://api.gestion-formacion.tech/grupo/get-by-cod-centro/${codCentro}`, {
+            headers: {
+                'accept': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Error HTTP: ${response.status}`);
+        }
+        
+        const grupos = await response.json();
+        
+        if (!grupos || grupos.length === 0) {
+            console.log('No hay grupos para mostrar demografía');
             const canvas = document.getElementById('demografia-aprendices-chart');
             if (canvas) {
                 const ctx = canvas.getContext('2d');
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 ctx.font = "16px Segoe UI";
                 ctx.fillStyle = "#888";
-                ctx.fillText("No hay datos disponibles", 40, 60);
+                ctx.fillText("No hay grupos disponibles", 40, 60);
             }
             return;
         }
 
-        // Obtener datos de demografía para los grupos disponibles
+        // Obtener datos de demografía para los primeros 5 grupos
         const gruposDemografia = [];
         let totalAprendices = 0;
-
-        // Procesar los primeros 5 grupos del resumen para mostrar demografía
-        const gruposAMostrar = resumen.slice(0, 5);
+        const gruposAMostrar = grupos.slice(0, 5);
         
         for (const grupo of gruposAMostrar) {
             try {
                 // Obtener datos específicos del grupo
-                const datosGrupo = await gruposService.getDatosGrupoByCodFicha(grupo.cod_ficha);
+                const datosResponse = await fetch(`https://api.gestion-formacion.tech/datos-grupo/get-by-cod-ficha/${grupo.cod_ficha}`, {
+                    headers: {
+                        'accept': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    }
+                });
                 
-                if (datosGrupo) {
-                    const masculinos = datosGrupo.num_aprendices_masculinos || 0;
-                    const femeninos = datosGrupo.num_aprendices_femenino || 0;
-                    const noBinarios = datosGrupo.num_aprendices_no_binario || 0;
+                if (datosResponse.ok) {
+                    const datosGrupo = await datosResponse.json();
                     
+                    if (datosGrupo) {
+                        const masculinos = datosGrupo.num_aprendices_masculinos || 0;
+                        const femeninos = datosGrupo.num_aprendices_femenino || 0;
+                        const noBinarios = datosGrupo.num_aprendices_no_binario || 0;
+                        
+                        gruposDemografia.push({
+                            cod_ficha: grupo.cod_ficha,
+                            masculinos: masculinos,
+                            femeninos: femeninos,
+                            no_binarios: noBinarios
+                        });
+                        
+                        totalAprendices += masculinos + femeninos + noBinarios;
+                    }
+                } else {
+                    // Si no se pueden obtener datos específicos, usar datos del grupo
+                    const totalGrupo = grupo.num_total_aprendices || 0;
                     gruposDemografia.push({
                         cod_ficha: grupo.cod_ficha,
-                        masculinos: masculinos,
-                        femeninos: femeninos,
-                        no_binarios: noBinarios
+                        masculinos: Math.floor(totalGrupo * 0.5),
+                        femeninos: Math.floor(totalGrupo * 0.4),
+                        no_binarios: totalGrupo % 10
                     });
-                    
-                    totalAprendices += masculinos + femeninos + noBinarios;
+                    totalAprendices += totalGrupo;
                 }
             } catch (error) {
                 console.warn(`Error obteniendo datos del grupo ${grupo.cod_ficha}:`, error);
-                // Si no se pueden obtener datos específicos, usar datos del resumen
-                const totalGrupo = grupo.cantidad || 0;
+                // Fallback con datos básicos
+                const totalGrupo = grupo.num_total_aprendices || 0;
                 gruposDemografia.push({
                     cod_ficha: grupo.cod_ficha,
                     masculinos: Math.floor(totalGrupo * 0.5),
