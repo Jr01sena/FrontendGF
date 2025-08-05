@@ -1,4 +1,5 @@
 import { userService } from '../api/user.service.js';
+import { gruposService } from '../api/grupos.service.js';
 
 function init(){
     var ctx = document.getElementById("chart-bars").getContext("2d");
@@ -533,7 +534,70 @@ userService.getRoleDistribution()
 
 
 }
-init();
+
+const user = JSON.parse(localStorage.getItem('user'));
+if (user?.id_rol !== 3) {
+  init();
+}
+
 export { init };
 
+
 // FIN MODULO GRAFICA CAMILO
+
+// js/pages/dashboard.js
+
+const elements = {
+    filtroCentro: document.getElementById('filtroCentro'),
+    filtroJornada: document.getElementById('filtroJornada'),
+    filtroModalidad: document.getElementById('filtroModalidad'),
+    resumenContainer: document.getElementById('resumenGrupos')
+};
+
+async function cargarFiltros() {
+    const { centros, jornadas, modalidades } = await grupoService.getFiltros();
+
+    centros.forEach(c => elements.filtroCentro.innerHTML += `<option value="${c.id}">${c.nombre}</option>`);
+    jornadas.forEach(j => elements.filtroJornada.innerHTML += `<option value="${j}">${j}</option>`);
+    modalidades.forEach(m => elements.filtroModalidad.innerHTML += `<option value="${m}">${m}</option>`);
+}
+
+async function cargarResumen() {
+    const filtros = {
+        centro: elements.filtroCentro.value,
+        jornada: elements.filtroJornada.value,
+        modalidad: elements.filtroModalidad.value
+    };
+
+    const resumen = await grupoService.getResumenGrupos(filtros);
+    mostrarResumen(resumen);
+}
+
+function mostrarResumen(resumen) {
+    elements.resumenContainer.innerHTML = '';
+
+    resumen.forEach(item => {
+        elements.resumenContainer.innerHTML += `
+            <div class="card mb-3 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">${item.modalidad}</h5>
+                    <p class="card-text">
+                        Total: ${item.total_grupos}<br>
+                        Activos: ${item.activos}<br>
+                        Finalizados: ${item.finalizados}<br>
+                        Cancelados: ${item.cancelados}
+                    </p>
+                </div>
+            </div>
+        `;
+    });
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+    await cargarFiltros();
+    await cargarResumen();
+
+    elements.filtroCentro.addEventListener('change', cargarResumen);
+    elements.filtroJornada.addEventListener('change', cargarResumen);
+    elements.filtroModalidad.addEventListener('change', cargarResumen);
+});

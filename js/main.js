@@ -1,6 +1,12 @@
 import { authService } from './api/auth.service.js';
 
-// GUARDIÁN DE AUTENTICACIÓN
+// 🔒 Función de ayuda para validar el rol
+const isRol = (rol) => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  return user?.id_rol === rol;
+};
+
+// 🚪 GUARDIÁN DE AUTENTICACIÓN
 (() => {
   const token = localStorage.getItem('accessToken');
   if (!token) {
@@ -11,7 +17,6 @@ import { authService } from './api/auth.service.js';
 const mainContent = document.getElementById('main-content');
 const navLinks = document.querySelector('.sidebar-nav');
 
-// Mapeo de nombres de página a títulos para el breadcrumb
 const pageNames = {
   dashboard: 'Dashboard',
   usuarios: 'Usuarios',
@@ -29,41 +34,36 @@ const pageNames = {
   'sign-up': 'Sign Up'
 };
 
-
-
-/**
- * Carga dinámicamente el contenido HTML de la página indicada y, si es necesario,
- * importa y ejecuta el módulo JS correspondiente para enganchar la lógica de la vista.
- * Esto permite que cada vista tenga su propio JS y listeners, incluso cuando se carga dinámicamente.
- */
+// ✅ Función principal para cargar contenido dinámico
 const loadContent = async (page) => {
-
   try {
-    const response = await fetch(`pages/${page}.html`);
-
-
-    if (!response.ok) {
-      throw new Error(`Error de red: ${response.status} - ${response.statusText}`);
+    // Restricción de seguridad adicional para evitar que instructores carguen dashboard
+    if (page === 'dashboard' && isRol(3)) {
+      console.warn('Acceso denegado al dashboard para rol 3');
+      return loadContent('calendario');
     }
+
+    const response = await fetch(`pages/${page}.html`);
+    if (!response.ok) throw new Error(`Error de red: ${response.status} - ${response.statusText}`);
+
     const html = await response.text();
     mainContent.innerHTML = html;
-    
-    // Actualizar estado activo en navegación
+
+    // Navegación activa
     document.querySelectorAll('.nav-link[data-page]').forEach(link => {
-      if (link.dataset.page === page) {
-        link.classList.add('active', 'bg-success', 'text-white');
-      } else {
-        link.classList.remove('active', 'bg-success', 'text-white');
-      }
+      const isActive = link.dataset.page === page;
+      link.classList.toggle('active', isActive);
+      link.classList.toggle('bg-success', isActive);
+      link.classList.toggle('text-white', isActive);
     });
 
-    // Actualizar breadcrumb
+    // Breadcrumb
     const breadcrumb = document.getElementById('breadcrumb-current');
     if (breadcrumb && pageNames[page]) {
       breadcrumb.textContent = pageNames[page];
     }
 
-    // Cargar módulos JavaScript correspondientes
+    // Cargar JS de la página
     await loadPageModule(page);
 
   } catch (error) {
@@ -92,131 +92,120 @@ const loadContent = async (page) => {
   }
 };
 
-/**
- * Carga el módulo JavaScript específico para cada página
- * @param {string} page - Nombre de la página
- */
+// ✅ Import dinámico del JS por página
 const loadPageModule = async (page) => {
   try {
     switch (page) {
       case 'dashboard':
+        if (isRol(3)) return;
         const dashboardModule = await import('./pages/dashboard.js');
-        if (dashboardModule.init) {
-          dashboardModule.init();
-        }
+        if (dashboardModule.init) dashboardModule.init();
         break;
 
       case 'usuarios':
         const usersModule = await import('./pages/users.js');
-        if (usersModule.init) {
-          usersModule.init();
-        }
+        if (usersModule.init) usersModule.init();
         break;
 
       case 'centros':
         const centrosModule = await import('./pages/centros.js');
-        if (centrosModule.init) {
-          centrosModule.init();
-        }
+        if (centrosModule.init) centrosModule.init();
         break;
 
       case 'ambientes':
         const ambientesModule = await import('./pages/ambientes.js');
-        if (ambientesModule.init) {
-          ambientesModule.init();
-        }
+        if (ambientesModule.init) ambientesModule.init();
         break;
 
       case 'programas':
         const programasModule = await import('./pages/programas.js');
-        if (programasModule.init) {
-          programasModule.init();
-        }
+        if (programasModule.init) programasModule.init();
         break;
 
       case 'competencias':
         const competenciasModule = await import('./pages/competencias.js');
-        if (competenciasModule.init) {
-          competenciasModule.init();
-        }
-        break;
-      
-      case 'metas':
-        const metasModule = await import('./pages/metas.js');
-        if (metasModule.init) {
-          metasModule.init();
-        }
+        if (competenciasModule.init) competenciasModule.init();
         break;
 
+      case 'metas':
+        const metasModule = await import('./pages/metas.js');
+        if (metasModule.init) metasModule.init();
+        break;
 
       case 'grupos':
         const gruposModule = await import('./pages/grupos.js');
-        if (gruposModule.init) {
-          // Pequeño delay para asegurar que el DOM esté listo
-          setTimeout(() => {
-            gruposModule.init();
-          }, 50);
-        }
+        setTimeout(() => gruposModule.init?.(), 50);
         break;
 
       case 'calendario':
         const calendarioModule = await import('./pages/calendario.js');
-        if (calendarioModule.init) {
-          // Pequeño delay para asegurar que el DOM esté listo
-          setTimeout(() => {
-            calendarioModule.init();
-          }, 50);
-        }
+        setTimeout(() => calendarioModule.init?.(), 50);
         break;
 
       case 'cargararchivos':
         const cargararchivosModule = await import('./pages/cargararchivos.js');
-        if (cargararchivosModule.init) {
-          cargararchivosModule.init();
-        }
+        if (cargararchivosModule.init) cargararchivosModule.init();
         break;
 
       case 'profile':
         const profileModule = await import('./pages/profile.js');
-        if (profileModule.init) {
-          profileModule.init();
-        }
-        break;
-
-
-      case 'billing':
-      case 'notifications':
+        if (profileModule.init) profileModule.init();
         break;
 
       default:
+        break;
     }
   } catch (error) {
+    console.error(`Error cargando el módulo de la página '${page}':`, error);
   }
 };
 
-// Event listener para navegación
+// 📦 Carga inicial y lógica de seguridad por rol
+document.addEventListener('DOMContentLoaded', () => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  const hash = location.hash?.replace('#', '') || null;
+
+  console.log('👤 Usuario detectado:', user);
+  console.log('🔗 Hash actual:', hash);
+
+  // Ocultar accesos según rol
+  if (user?.id_rol === 3) {
+    const pagesToHide = ['dashboard', 'usuarios', 'centros', 'cargararchivos', 'grupos', 'metas'];
+    pagesToHide.forEach(page => {
+      const navItem = document.querySelector(`[data-page="${page}"]`);
+      if (navItem) {
+        navItem.closest('.nav-item').style.display = 'none';
+      }
+    });
+  }
+
+  // Redirección segura
+  if (hash === 'dashboard' && isRol(3)) {
+    history.replaceState(null, '', '#calendario');
+    loadContent('calendario');
+  } else if (hash) {
+    loadContent(hash);
+  } else {
+    const defaultPage = isRol(3) ? 'calendario' : 'dashboard';
+    history.replaceState(null, '', `#${defaultPage}`);
+    loadContent(defaultPage);
+  }
+});
+
+// Navegación lateral dinámica
 navLinks.addEventListener('click', (event) => {
   const link = event.target.closest('a[data-page]');
   if (link) {
     event.preventDefault();
-    const pageToLoad = link.dataset.page;
-    loadContent(pageToLoad);
+    loadContent(link.dataset.page);
   }
 });
 
-// Event listener para logout
+// Logout
 const logoutButton = document.getElementById('logout-button');
-if (logoutButton) {
-  logoutButton.addEventListener('click', (event) => {
-    event.preventDefault();
-    authService.logout();
-  });
-}
-
-// Carga inicial del dashboard
-document.addEventListener('DOMContentLoaded', () => {
-  loadContent('dashboard');
+logoutButton?.addEventListener('click', (e) => {
+  e.preventDefault();
+  authService.logout();
 });
 
 window.loadContent = loadContent;
-

@@ -130,3 +130,43 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script type="module" src="../js/pages/dashboard.js"></script>
+
+<!-- pages/dashboard.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dashboard de Grupos</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body class="bg-light">
+  <div class="container py-5">
+    <h1 class="mb-4">📊 Dashboard de Grupos</h1>
+
+    <div class="row g-3 mb-4">
+      <div class="col-md-4">
+        <label class="form-label">Centro de Formación</label>
+        <select id="filtroCentro" class="form-select">
+          <option value="">Todos</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Jornada</label>
+        <select id="filtroJornada" class="form-select">
+          <option value="">Todas</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Modalidad</label>
+        <select id="filtroModalidad" class="form-select">
+          <option value="">Todas</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="resumenGrupos" class="row"></div>
+  </div>
+
+  <script type="module" src="../js/pages/dashboard.js"></script>
+</body>
+</html>

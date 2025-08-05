@@ -356,50 +356,52 @@ function createProgramacionEvent(programacion) {
 function createDayElement(date, currentMonth, today, programaciones) {
     const dayDiv = document.createElement('div');
     dayDiv.className = 'calendar-day';
-    
-    // Clases adicionales
+
     if (date.getMonth() !== currentMonth) {
         dayDiv.classList.add('other-month');
     }
-    
+
     if (isSameDay(date, today)) {
         dayDiv.classList.add('today');
     }
-    
-    // Número del día
+
     const dayNumber = document.createElement('div');
     dayNumber.className = 'day-number';
     dayNumber.textContent = date.getDate();
     dayDiv.appendChild(dayNumber);
-    
-    // Si es un día hábil (no domingo ni festivo), permitir abrir el modal
-    const esDomingo = date.getDay() === 0;
-    const esFestivo = diasFestivos.includes(formatDateForAPI(date));
-    if (!esDomingo && !esFestivo) {
-        dayDiv.addEventListener('click', () => openNuevaProgramacionModal(date));
-    }
 
-    // Programaciones del día
-    const dayProgramaciones = programaciones.filter(prog => 
-        isSameDay(parseLocalDate(prog.fecha_programada), date)
-    );
-    
-    dayProgramaciones.forEach(prog => {
-        const eventBtn = createProgramacionEvent(prog);  // ← Ya agrega los datasets internamente
-        dayDiv.appendChild(eventBtn);
-    });
-
+    // Festivo o domingo
     const isDomingo = date.getDay() === 0;
     const isFestivo = diasFestivos.includes(formatDateForAPI(date));
 
     if (isDomingo || isFestivo) {
-        dayDiv.classList.add('dia-bloqueado');
-        dayDiv.classList.add('disabled');
+        dayDiv.classList.add('dia-bloqueado', 'disabled');
         dayDiv.title = isDomingo ? 'Domingo no programable' : 'Festivo no programable';
     }
-    
+
+    // Programaciones del día
+    const dayProgramaciones = programaciones.filter(prog =>
+        isSameDay(parseLocalDate(prog.fecha_programada), date)
+    );
+
+    dayProgramaciones.forEach(prog => {
+        const eventBtn = createProgramacionEvent(prog);
+        dayDiv.appendChild(eventBtn);
+    });
+
+    // 👉 CLICK EN CASILLA para nueva programación, solo si es habilitado
+    if (!isDomingo && !isFestivo) {
+        dayDiv.addEventListener('click', (e) => {
+            // 🛑 Evitar conflicto si se hace clic sobre un botón interno
+            if (e.target.closest('.programacion-event')) return;
+
+            openNuevaProgramacionModal(date);
+        });
+    }
+
     return dayDiv;
 }
+
 
 
 
@@ -459,8 +461,6 @@ async function openProgramacionModal(idProgramacion) {
         // Resetear modo edición al abrir
         resetEditMode();
         
-        hideNuevaModalError();
-        hideModalError();
         modal.show();
         
         // Cargar datos de la programación
@@ -976,8 +976,7 @@ function resetEditMode() {
 }
 
 
-
-async function openNuevaProgramacionModal(date = null) {
+async function openNuevaProgramacionModal(selectedDate = null) {
     console.log('➕ Abriendo modal nueva programación...');
     
     try {
@@ -988,16 +987,18 @@ async function openNuevaProgramacionModal(date = null) {
         
         // Cargar fichas del instructor
         await loadFichasForNewProgramacion();
-        
-                const fechaPorDefecto = date || new Date();
-        document.getElementById('nueva-fecha').value = formatDateForAPI(fechaPorDefecto);
-        
+
+        // Establecer la fecha (usamos la seleccionada o hoy si no hay)
+        const fecha = selectedDate instanceof Date ? selectedDate : new Date();
+        const fechaFormateada = formatDateForAPI(fecha);
+        document.getElementById('nueva-fecha').value = fechaFormateada;
+
         const fechaInput = document.getElementById('nueva-fecha');
         fechaInput.addEventListener('input', (e) => {
-            const fecha = e.target.value;
-            const fechaDate = parseLocalDate(fecha);
+            const nuevaFecha = e.target.value;
+            const fechaDate = parseLocalDate(nuevaFecha);
             const esDomingo = fechaDate.getDay() === 0;
-            const esFestivo = diasFestivos.includes(fecha);
+            const esFestivo = diasFestivos.includes(nuevaFecha);
 
             if (esDomingo || esFestivo) {
                 showNuevaModalError('No se puede programar en domingos ni festivos.');
@@ -1007,15 +1008,14 @@ async function openNuevaProgramacionModal(date = null) {
             }
         });
 
-        hideNuevaModalError();
-        hideModalError();
         modal.show();
-        
+
     } catch (error) {
         console.error('❌ Error al abrir modal nueva programación:', error);
         showNuevaModalError(error.message || 'Error al cargar el formulario');
     }
 }
+
 
 
 async function createNuevaProgramacion() {

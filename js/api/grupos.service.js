@@ -2,6 +2,13 @@
 import { request } from './apiClient.js';
 
 export const gruposService = {
+    getResumenGrupos: async (filters = {}) => {
+        const query = new URLSearchParams(filters).toString();
+        return await request(`/grupo/resumen?${query}`);
+    },
+    getFiltros: async () => {
+        return await request('/grupo/filtros');
+    },
     /**
      * DATO_GRUPO - Solo consulta
      * Obtiene los datos del grupo por código de ficha
